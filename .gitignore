@@ -35,3 +35,8 @@
 *__pycache__*
 *scratch*
 *.vscode
+
+/examples
+/iot-of-the-sea
+
+*.o
