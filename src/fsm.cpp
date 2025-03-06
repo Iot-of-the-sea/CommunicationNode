@@ -5,9 +5,15 @@ using namespace chrono;
 
 NodeFSM node(false);
 
-AudioTransmitter audioTx(AudioProfile(1000.0, {120, 244}));
+AudioTransmitter audioTx(AudioProfile(5000.0, {240, 488}));
 
-frame nodeFrame;
+frame nodeFrame = {
+    .mode = CTRL_MODE,
+    .header = 0,
+    .data = {}};
+
+std::vector<uint8_t> packet;
+string response;
 
 int main()
 {
@@ -17,8 +23,6 @@ int main()
     }
     return 0;
 }
-
-string response;
 
 // Implement state transitions
 void IdleState::handle(NodeFSM &fsm)
@@ -118,17 +122,9 @@ void SendIDState::handle(NodeFSM &fsm)
 
 void SendRTSState::handle(NodeFSM &fsm)
 {
-
-    nodeFrame = {
-        .mode = CTRL_MODE,
-        .header = RTS,
-        .data = {}};
-
-    std::vector<uint8_t> packet(33);
+    updateFrame(nodeFrame, CTRL_MODE, RTS);
     packetFromFrame(packet, nodeFrame);
-    printFrame(nodeFrame);
-
-    audioTx.play_sequence(packet);
+    audioTx.play_sequence(packet, true);
 
     cout << "cts? (y/n) ";
     cin >> response;
@@ -162,6 +158,10 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
 void SendDataStartState::handle(NodeFSM &fsm)
 {
+    updateFrame(nodeFrame, CTRL_MODE, DATA_START);
+    packetFromFrame(packet, nodeFrame);
+    audioTx.play_sequence(packet, true);
+
     cout << "ack/nak? ";
     cin >> response;
 
@@ -178,6 +178,28 @@ void SendDataStartState::handle(NodeFSM &fsm)
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
+    std::ifstream ifile("./lib/test.txt", std::ifstream::binary); // Open the file
+    if (!ifile)
+    {
+        std::cerr << "Error opening file!" << std::endl;
+    }
+
+    char *frameBuf = new char[FRAME_SIZE_BYTES];
+    uint8_t frameNum = 0;
+    while (ifile.read(frameBuf, FRAME_SIZE_BYTES))
+    {
+        updateFrame(nodeFrame, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
+        packetFromFrame(packet, nodeFrame);
+        audioTx.play_sequence(packet, true);
+        frameNum++;
+        usleep(100);
+    }
+    updateFrame(nodeFrame, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
+    packetFromFrame(packet, nodeFrame);
+    audioTx.play_sequence(packet, true);
+
+    ifile.close(); // Close the file
+
     cout << "done? (y/n) ";
     cin >> response;
     if (response == "y")
@@ -193,6 +215,10 @@ void SendDataFrameState::handle(NodeFSM &fsm)
 
 void SendEOTState::handle(NodeFSM &fsm)
 {
+    updateFrame(nodeFrame, CTRL_MODE, EOT);
+    packetFromFrame(packet, nodeFrame);
+    audioTx.play_sequence(packet, true);
+
     cout << "ack/nak? ";
     cin >> response;
 
@@ -276,6 +302,10 @@ void ReadRTSState::handle(NodeFSM &fsm)
 
     if (response == "y")
     {
+        updateFrame(nodeFrame, CTRL_MODE, CTS);
+        packetFromFrame(packet, nodeFrame);
+        audioTx.play_sequence(packet, true);
+
         cout << "CTS" << endl;
         cout << "to stage read header" << endl;
         fsm.changeState(std::make_unique<ReadHeaderState>());

@@ -27,9 +27,11 @@ typedef struct
 {
     uint8_t mode;
     uint8_t header;
-    uint8_t data[32];
+    uint8_t data[FRAME_SIZE_BYTES];
 } frame;
 
+uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n, uint8_t *data_n);
+uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n);
 uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame);
 uint8_t packetFromFrame(std::vector<uint8_t> &packet, frame &frame);
 uint8_t printFrame(frame &frame);

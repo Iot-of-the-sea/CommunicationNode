@@ -1,5 +1,19 @@
 #include "data.h"
 
+uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n, uint8_t *data_n)
+{
+    updateFrame(frame, mode_n, header_n);
+    std::memcpy(frame.data, data_n, FRAME_SIZE_BYTES);
+    return 0;
+}
+
+uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n)
+{
+    frame.mode = mode_n;
+    frame.header = header_n;
+    return 0;
+}
+
 uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame)
 {
     uint8_t headerByte = frame.header | (frame.mode << 7);

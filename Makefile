@@ -36,4 +36,4 @@ run_test: test
 	$(TST_DIR)/data_tests
 
 clean:
-	rm -f **/*.o ./lib/audio/audiotransmitter
+	rm -f **/*.o ./lib/audio/audiotransmitter ./program ./tst/data_tests ./build/data

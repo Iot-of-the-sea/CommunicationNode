@@ -10,6 +10,8 @@
 #include "../lib/audio/audiotransmitter.h"
 #include "../lib/audio/audioprofile.h"
 #include "../lib/protocol.h"
+#include <fstream>
+#include <unistd.h>
 
 using namespace std;
 
