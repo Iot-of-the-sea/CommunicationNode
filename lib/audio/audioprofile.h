@@ -2,6 +2,11 @@
 #ifndef __AUDIO_PROFILE__
 #define __AUDIO_PROFILE__
 
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+#include <cmath>
+
 class AudioProfile
 {
 private:

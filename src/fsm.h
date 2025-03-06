@@ -7,6 +7,10 @@
 #include <thread>
 #include <string>
 
+#include "../lib/audio/audiotransmitter.h"
+#include "../lib/audio/audioprofile.h"
+#include "../lib/protocol.h"
+
 using namespace std;
 
 class NodeFSM;

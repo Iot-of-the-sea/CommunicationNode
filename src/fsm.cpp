@@ -3,7 +3,11 @@
 using namespace std;
 using namespace chrono;
 
-NodeFSM node(true);
+NodeFSM node(false);
+
+AudioTransmitter audioTx(AudioProfile(1000.0, {120, 244}));
+
+frame nodeFrame;
 
 int main()
 {
@@ -114,6 +118,18 @@ void SendIDState::handle(NodeFSM &fsm)
 
 void SendRTSState::handle(NodeFSM &fsm)
 {
+
+    nodeFrame = {
+        .mode = CTRL_MODE,
+        .header = RTS,
+        .data = {}};
+
+    std::vector<uint8_t> packet(33);
+    packetFromFrame(packet, nodeFrame);
+    printFrame(nodeFrame);
+
+    audioTx.play_sequence(packet);
+
     cout << "cts? (y/n) ";
     cin >> response;
 

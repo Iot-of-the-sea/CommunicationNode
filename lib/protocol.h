@@ -31,5 +31,7 @@ typedef struct
 } frame;
 
 uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame);
+uint8_t packetFromFrame(std::vector<uint8_t> &packet, frame &frame);
+uint8_t printFrame(frame &frame);
 
 #endif // __PROTOCOL__

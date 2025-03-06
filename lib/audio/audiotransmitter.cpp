@@ -3,7 +3,7 @@
 AudioTransmitter::AudioTransmitter(const AudioProfile &profile) : audio(profile) {}
 
 // Function to play sequence
-void AudioTransmitter::play_sequence(std::vector<uint8_t> &sequence, bool preamble = false)
+void AudioTransmitter::play_sequence(std::vector<uint8_t> &sequence, bool preamble)
 {
     auto signal = generate_sequence(sequence, preamble);
     play_audio(signal);
@@ -11,7 +11,7 @@ void AudioTransmitter::play_sequence(std::vector<uint8_t> &sequence, bool preamb
 
 // Function to generate a bit sequence waveform
 // little endian
-std::vector<double> AudioTransmitter::generate_sequence(std::vector<uint8_t> &bytes, bool preamble = false)
+std::vector<double> AudioTransmitter::generate_sequence(std::vector<uint8_t> &bytes, bool preamble)
 {
     int byte_num = bytes.size();
     int bit_num = byte_num * 8;
@@ -55,7 +55,7 @@ std::vector<double> AudioTransmitter::generate_sequence(std::vector<uint8_t> &by
 }
 
 // Generate a sine wave of a given frequency
-std::vector<double> AudioTransmitter::generate_frequency(double freq, double start = 0)
+std::vector<double> AudioTransmitter::generate_frequency(double freq, double start)
 {
     double bit_time = audio.get_bit_time();
     int sample_count = static_cast<int>(bit_time * audio.get_sample_rate());
@@ -107,31 +107,31 @@ void AudioTransmitter::play_audio(const std::vector<double> &signal)
     Pa_Terminate();
 }
 
-// Main function to run the example
-int test()
-{
-    try
-    {
-        std::vector<uint8_t> single_sequence = {0b00101000, 0b00010001, 0b10001001, 0b11101000,
-                                                0b00010101, 0b01010101, 0b00100010, 0b11101010};
+// // Main function to run the example
+// int test()
+// {
+//     try
+//     {
+//         std::vector<uint8_t> single_sequence = {0b00101000, 0b00010001, 0b10001001, 0b11101000,
+//                                                 0b00010101, 0b01010101, 0b00100010, 0b11101010};
 
-        std::vector<uint8_t> sequence;
-        for (int i = 0; i < 3; i++)
-        {
-            sequence.insert(sequence.end(), single_sequence.begin(), single_sequence.end());
-        }
+//         std::vector<uint8_t> sequence;
+//         for (int i = 0; i < 3; i++)
+//         {
+//             sequence.insert(sequence.end(), single_sequence.begin(), single_sequence.end());
+//         }
 
-        std::vector<uint8_t> bits(sequence.begin(), sequence.end());
+//         std::vector<uint8_t> bits(sequence.begin(), sequence.end());
 
-        AudioProfile ap(500000.0, {120, 244}); // 1000 μs bit time, low 120 Hz, high 244 Hz
-        AudioTransmitter tx(ap);
+//         AudioProfile ap(500000.0, {120, 244}); // 1000 μs bit time, low 120 Hz, high 244 Hz
+//         AudioTransmitter tx(ap);
 
-        tx.play_sequence(bits, true);
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Error: " << e.what() << '\n';
-    }
+//         tx.play_sequence(bits, true);
+//     }
+//     catch (const std::exception &e)
+//     {
+//         std::cerr << "Error: " << e.what() << '\n';
+//     }
 
-    return 0;
-}
+//     return 0;
+// }

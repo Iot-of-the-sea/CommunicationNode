@@ -5,14 +5,18 @@ CFLAGS = -g -Wall -std=c++17
 TST_DIR = ./tst
 LIB_DIR = ./lib
 BUILD_DIR = ./build
+SRC = ./src
 
 all: program
+
+program: audiotransmitter.o data.o $(SRC)/fsm.cpp $(SRC)/fsm.h
+	$(CC) $(CFLAGS) -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio -o program $(SRC)/fsm.cpp $(BUILD_DIR)/audiotransmitter.o $(BUILD_DIR)/audioprofile.o $(BUILD_DIR)/data.o
 
 audioprofile.o: $(LIB_DIR)/audio/audioprofile.h $(LIB_DIR)/audio/audioprofile.cpp
 	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audioprofile.cpp -o $(BUILD_DIR)/audioprofile.o
 
-audiotransmitter: audioprofile.o $(LIB_DIR)/audio/audiotransmitter.cpp
-	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audiotransmitter.cpp -I/opt/homebrew/include -o $(BUILD_DIR)/audiotransmitter.o
+audiotransmitter.o: audioprofile.o $(LIB_DIR)/audio/audiotransmitter.cpp $(LIB_DIR)/audio/audiotransmitter.h
+	$(CC) $(CFLAGS) -I/opt/homebrew/include -c $(LIB_DIR)/audio/audiotransmitter.cpp -o $(BUILD_DIR)/audiotransmitter.o
 
 
 data.o: $(LIB_DIR)/data.cpp
