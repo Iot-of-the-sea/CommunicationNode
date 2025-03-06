@@ -13,18 +13,22 @@ public:
     explicit AudioTransmitter(const AudioProfile &profile) : audio(profile) {}
 
     // Function to play sequence
-    void play_sequence(std::vector<uint8_t> &sequence)
+    void play_sequence(std::vector<uint8_t> &sequence, bool preamble = false)
     {
-        auto signal = generate_sequence(sequence);
+        auto signal = generate_sequence(sequence, preamble);
         play_audio(signal);
     }
 
     // Function to generate a bit sequence waveform
     // little endian
-    std::vector<double> generate_sequence(std::vector<uint8_t> &bytes)
+    std::vector<double> generate_sequence(std::vector<uint8_t> &bytes, bool preamble = false)
     {
         int byte_num = bytes.size();
-        double seq_dur = byte_num * 8 * audio.get_bit_time();
+        int bit_num = byte_num * 8;
+        if (preamble)
+            bit_num += 6;
+        double seq_dur = bit_num * audio.get_bit_time();
+
         int sample_count = static_cast<int>(seq_dur * audio.get_sample_rate());
 
         std::vector<double> t(sample_count);
@@ -33,15 +37,27 @@ public:
         for (int i = 0; i < sample_count; ++i)
             t[i] = i / audio.get_sample_rate();
 
+        std::vector<double> bit_wave;
+        double offset = 0;
+        if (preamble)
+        {
+            uint8_t preamble_bits[6] = {0, 0, 1, 1, 0, 0};
+            for (size_t i = 0; i < 6; i++)
+            {
+                bit_wave = (preamble_bits[i]) ? generate_high(offset) : generate_low(offset);
+                y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+                offset += audio.get_bit_time();
+            }
+        }
+
         // Generate waveforms
         for (size_t n = 0; n < byte_num; n++)
         {
             for (size_t m = 0; m < 8; m++)
             {
-                int i = n * 8 + m;
-                double bit_start = i * audio.get_bit_time();
-                std::vector<double> bit_wave = (bytes[n] & (1 << m)) ? generate_high(bit_start) : generate_low(bit_start);
+                bit_wave = (bytes[n] & (1 << m)) ? generate_high(offset) : generate_low(offset);
                 y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+                offset += audio.get_bit_time();
             }
         }
 
@@ -87,7 +103,7 @@ public:
         for (double sample : signal)
         {
             float_t pcm_sample = static_cast<float_t>(sample); // Convert to 16-bit PCM
-            pcm_signal[counter] = pcm_sample;
+            pcm_signal.at(counter) = pcm_sample;
             counter++;
         }
 
@@ -111,17 +127,17 @@ int test()
                                                 0b00010101, 0b01010101, 0b00100010, 0b11101010};
 
         std::vector<uint8_t> sequence;
-        for (int i = 0; i < 30; i++)
+        for (int i = 0; i < 3; i++)
         {
             sequence.insert(sequence.end(), single_sequence.begin(), single_sequence.end());
         }
 
         std::vector<uint8_t> bits(sequence.begin(), sequence.end());
 
-        AudioProfile ap(1000.0, {120, 244}); // 1000 μs bit time, low 120 Hz, high 244 Hz
+        AudioProfile ap(500000.0, {120, 244}); // 1000 μs bit time, low 120 Hz, high 244 Hz
         AudioTransmitter tx(ap);
 
-        tx.play_sequence(bits);
+        tx.play_sequence(bits, true);
     }
     catch (const std::exception &e)
     {

@@ -40,3 +40,5 @@
 /iot-of-the-sea
 
 *.o
+
+*.dSYM/

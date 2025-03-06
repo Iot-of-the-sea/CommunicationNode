@@ -1,18 +1,27 @@
 
 CC = g++
 CFLAGS = -g -Wall -std=c++17
-OBJ = main.o helper.o
+
+TST_DIR = ./tst
+LIB_DIR = ./lib
+BUILD_DIR = ./build
 
 all: program
 
-program: $(OBJ)
-	$(CC) $(CFLAGS) -o program $(OBJ)
+audioprofile.o: $(LIB_DIR)/audio/audioprofile.h $(LIB_DIR)/audio/audioprofile.cpp
+	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audioprofile.cpp -o $(BUILD_DIR)/audioprofile.o
 
-audioprofile.o: ./lib/audio/audioprofile.h ./lib/audio/audioprofile.cpp
-	$(CC) $(CFLAGS) -o ./lib/audio/audioprofile.o ./lib/audio/audioprofile.cpp
+audiotransmitter: audioprofile.o $(LIB_DIR)/audio/audiotransmitter.cpp
+	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audiotransmitter.cpp -I/opt/homebrew/include -o $(BUILD_DIR)/audiotransmitter.o
 
-audiotransmitter: ./lib/audio/audiotransmitter.cpp ./lib/audio/audioprofile.o
-	$(CC) $(CFLAGS) -o ./lib/audio/audiotransmitter ./lib/audio/audiotransmitter.cpp ./lib/audio/audioprofile.o -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
+unity.o: $(TST_DIR)/unity/unity.c $(TST_DIR)/unity/unity.h
+	$(CC) $(CFLAGS) -c $(TST_DIR)/unity/unity.c -o $(BUILD_DIR)/unity.o
+
+test: unity.o $(TST_DIR)/data_tests.cpp $(LIB_DIR)/protocol.h $(LIB_DIR)/data.cpp
+	$(CC) $(CFLAGS) -o $(TST_DIR)/data_tests $(BUILD_DIR)/unity.o $(TST_DIR)/data_tests.cpp $(LIB_DIR)/data.cpp
+
+run_test: test
+	$(TST_DIR)/data_tests
 
 clean:
-	rm -f ./lib/*.o ./lib/audio/audiotransmitter
+	rm -f **/*.o ./lib/audio/audiotransmitter
