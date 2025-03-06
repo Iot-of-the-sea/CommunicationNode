@@ -1,122 +1,111 @@
-#include <iostream>
-#include <vector>
-#include <portaudio.h>
-#include "audioprofile.h" // Include your AudioProfile class
+#include "audiotransmitter.h"
 
-class AudioTransmitter
+AudioTransmitter::AudioTransmitter(const AudioProfile &profile) : audio(profile) {}
+
+// Function to play sequence
+void AudioTransmitter::play_sequence(std::vector<uint8_t> &sequence, bool preamble = false)
 {
-private:
-    AudioProfile audio;
+    auto signal = generate_sequence(sequence, preamble);
+    play_audio(signal);
+}
 
-public:
-    // Constructor
-    explicit AudioTransmitter(const AudioProfile &profile) : audio(profile) {}
+// Function to generate a bit sequence waveform
+// little endian
+std::vector<double> AudioTransmitter::generate_sequence(std::vector<uint8_t> &bytes, bool preamble = false)
+{
+    int byte_num = bytes.size();
+    int bit_num = byte_num * 8;
+    if (preamble)
+        bit_num += 6;
+    double seq_dur = bit_num * audio.get_bit_time();
 
-    // Function to play sequence
-    void play_sequence(std::vector<uint8_t> &sequence, bool preamble = false)
+    int sample_count = static_cast<int>(seq_dur * audio.get_sample_rate());
+
+    std::vector<double> t(sample_count);
+    std::vector<double> y;
+
+    for (int i = 0; i < sample_count; ++i)
+        t[i] = i / audio.get_sample_rate();
+
+    std::vector<double> bit_wave;
+    double offset = 0;
+    if (preamble)
     {
-        auto signal = generate_sequence(sequence, preamble);
-        play_audio(signal);
-    }
-
-    // Function to generate a bit sequence waveform
-    // little endian
-    std::vector<double> generate_sequence(std::vector<uint8_t> &bytes, bool preamble = false)
-    {
-        int byte_num = bytes.size();
-        int bit_num = byte_num * 8;
-        if (preamble)
-            bit_num += 6;
-        double seq_dur = bit_num * audio.get_bit_time();
-
-        int sample_count = static_cast<int>(seq_dur * audio.get_sample_rate());
-
-        std::vector<double> t(sample_count);
-        std::vector<double> y;
-
-        for (int i = 0; i < sample_count; ++i)
-            t[i] = i / audio.get_sample_rate();
-
-        std::vector<double> bit_wave;
-        double offset = 0;
-        if (preamble)
+        uint8_t preamble_bits[6] = {0, 0, 1, 1, 0, 0};
+        for (size_t i = 0; i < 6; i++)
         {
-            uint8_t preamble_bits[6] = {0, 0, 1, 1, 0, 0};
-            for (size_t i = 0; i < 6; i++)
-            {
-                bit_wave = (preamble_bits[i]) ? generate_high(offset) : generate_low(offset);
-                y.insert(y.end(), bit_wave.begin(), bit_wave.end());
-                offset += audio.get_bit_time();
-            }
+            bit_wave = (preamble_bits[i]) ? generate_high(offset) : generate_low(offset);
+            y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+            offset += audio.get_bit_time();
         }
+    }
 
-        // Generate waveforms
-        for (size_t n = 0; n < byte_num; n++)
+    // Generate waveforms
+    for (size_t n = 0; n < byte_num; n++)
+    {
+        for (size_t m = 0; m < 8; m++)
         {
-            for (size_t m = 0; m < 8; m++)
-            {
-                bit_wave = (bytes[n] & (1 << m)) ? generate_high(offset) : generate_low(offset);
-                y.insert(y.end(), bit_wave.begin(), bit_wave.end());
-                offset += audio.get_bit_time();
-            }
+            bit_wave = (bytes[n] & (1 << m)) ? generate_high(offset) : generate_low(offset);
+            y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+            offset += audio.get_bit_time();
         }
-
-        return y;
     }
 
-    // Generate a sine wave of a given frequency
-    std::vector<double> generate_frequency(double freq, double start = 0)
+    return y;
+}
+
+// Generate a sine wave of a given frequency
+std::vector<double> AudioTransmitter::generate_frequency(double freq, double start = 0)
+{
+    double bit_time = audio.get_bit_time();
+    int sample_count = static_cast<int>(bit_time * audio.get_sample_rate());
+
+    std::vector<double> y(sample_count);
+    double dt = 1.0 / audio.get_sample_rate(); // Time step
+
+    double t;
+    for (int i = 0; i < sample_count; ++i)
     {
-        double bit_time = audio.get_bit_time();
-        int sample_count = static_cast<int>(bit_time * audio.get_sample_rate());
-
-        std::vector<double> y(sample_count);
-        double dt = 1.0 / audio.get_sample_rate(); // Time step
-
-        double t;
-        for (int i = 0; i < sample_count; ++i)
-        {
-            t = (i * dt) + start;
-            y[i] = std::sin(2 * M_PI * freq * t) * audio.get_amplitude();
-        }
-        return y;
+        t = (i * dt) + start;
+        y[i] = std::sin(2 * M_PI * freq * t) * audio.get_amplitude();
     }
+    return y;
+}
 
-    // Generate low-frequency wave
-    std::vector<double> generate_low(double start)
+// Generate low-frequency wave
+std::vector<double> AudioTransmitter::generate_low(double start)
+{
+    return generate_frequency(audio.get_low(), start);
+}
+
+// Generate high-frequency wave
+std::vector<double> AudioTransmitter::generate_high(double start)
+{
+    return generate_frequency(audio.get_high(), start);
+}
+
+// Function to play the generated waveform using PortAudio
+void AudioTransmitter::play_audio(const std::vector<double> &signal)
+{
+    std::vector<float_t> pcm_signal(signal.size());
+    int counter = 0;
+    // Convert double samples to 16-bit PCM and write to file
+    for (double sample : signal)
     {
-        return generate_frequency(audio.get_low(), start);
+        float_t pcm_sample = static_cast<float_t>(sample); // Convert to 16-bit PCM
+        pcm_signal.at(counter) = pcm_sample;
+        counter++;
     }
 
-    // Generate high-frequency wave
-    std::vector<double> generate_high(double start)
-    {
-        return generate_frequency(audio.get_high(), start);
-    }
-
-    // Function to play the generated waveform using PortAudio
-    void play_audio(const std::vector<double> &signal)
-    {
-        std::vector<float_t> pcm_signal(signal.size());
-        int counter = 0;
-        // Convert double samples to 16-bit PCM and write to file
-        for (double sample : signal)
-        {
-            float_t pcm_sample = static_cast<float_t>(sample); // Convert to 16-bit PCM
-            pcm_signal.at(counter) = pcm_sample;
-            counter++;
-        }
-
-        Pa_Initialize();
-        PaStream *stream;
-        Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, audio.get_sample_rate(), paFramesPerBufferUnspecified, nullptr, nullptr);
-        Pa_StartStream(stream);
-        Pa_WriteStream(stream, pcm_signal.data(), pcm_signal.size());
-        Pa_StopStream(stream);
-        Pa_CloseStream(stream);
-        Pa_Terminate();
-    }
-};
+    Pa_Initialize();
+    PaStream *stream;
+    Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, audio.get_sample_rate(), paFramesPerBufferUnspecified, nullptr, nullptr);
+    Pa_StartStream(stream);
+    Pa_WriteStream(stream, pcm_signal.data(), pcm_signal.size());
+    Pa_StopStream(stream);
+    Pa_CloseStream(stream);
+    Pa_Terminate();
+}
 
 // Main function to run the example
 int test()

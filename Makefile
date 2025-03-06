@@ -14,6 +14,14 @@ audioprofile.o: $(LIB_DIR)/audio/audioprofile.h $(LIB_DIR)/audio/audioprofile.cp
 audiotransmitter: audioprofile.o $(LIB_DIR)/audio/audiotransmitter.cpp
 	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audiotransmitter.cpp -I/opt/homebrew/include -o $(BUILD_DIR)/audiotransmitter.o
 
+
+data.o: $(LIB_DIR)/data.cpp
+	$(CC) $(CFLAGS) -c $(LIB_DIR)/data.cpp -o $(BUILD_DIR)/data.o
+
+data: data.o
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/data $(BUILD_DIR)/data.o
+
+
 unity.o: $(TST_DIR)/unity/unity.c $(TST_DIR)/unity/unity.h
 	$(CC) $(CFLAGS) -c $(TST_DIR)/unity/unity.c -o $(BUILD_DIR)/unity.o
 
