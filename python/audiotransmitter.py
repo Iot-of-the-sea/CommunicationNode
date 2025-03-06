@@ -52,7 +52,8 @@ class AudioTransmitter(AudioObject):
         return self.generate_frequency(self.audio.high, start)
 
 
-sequence = "11101010001000100101010100010101111010001000100100010001001010" * 30
+sequence = "1110101000100010010101010001010111101000100010010001000100101000" * 30
+sequence = sequence[::-1]
 
 ap = AudioProfile(1000, (120, 244))
 tx = AudioTransmitter(ap)

@@ -20,19 +20,11 @@ public:
     }
 
     // Function to generate a bit sequence waveform
-    std::vector<double> generate_sequence(std::vector<uint8_t> &bits)
+    // little endian
+    std::vector<double> generate_sequence(std::vector<uint8_t> &bytes)
     {
-        for (auto &bit : bits)
-            bit -= '0'; // Convert ASCII '0'/'1' to integer
-
-        if (!std::all_of(bits.begin(), bits.end(), [](uint8_t b)
-                         { return b == 0 || b == 1; }))
-        {
-            throw std::invalid_argument("Sequence must contain only '0' and '1'.");
-        }
-
-        int bit_num = bits.size();
-        double seq_dur = bit_num * audio.get_bit_time();
+        int byte_num = bytes.size();
+        double seq_dur = byte_num * 8 * audio.get_bit_time();
         int sample_count = static_cast<int>(seq_dur * audio.get_sample_rate());
 
         std::vector<double> t(sample_count);
@@ -42,11 +34,15 @@ public:
             t[i] = i / audio.get_sample_rate();
 
         // Generate waveforms
-        for (size_t n = 0; n < bits.size(); ++n)
+        for (size_t n = 0; n < byte_num; n++)
         {
-            double bit_start = n * audio.get_bit_time();
-            std::vector<double> bit_wave = (bits[n]) ? generate_high(bit_start) : generate_low(bit_start);
-            y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+            for (size_t m = 0; m < 8; m++)
+            {
+                int i = n * 8 + m;
+                double bit_start = i * audio.get_bit_time();
+                std::vector<double> bit_wave = (bytes[n] & (1 << m)) ? generate_high(bit_start) : generate_low(bit_start);
+                y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+            }
         }
 
         return y;
@@ -106,27 +102,31 @@ public:
     }
 };
 
-// // Main function to run the example
-// int main()
-// {
-//     try
-//     {
-//         std::string sequence =
-//             "11101010001000100101010100010101111010001000100100010001001010";
-//         sequence = sequence + sequence + sequence + sequence + sequence; // Repeat 30x (simplified)
-//         sequence = sequence + sequence + sequence + sequence + sequence + sequence;
+// Main function to run the example
+int test()
+{
+    try
+    {
+        std::vector<uint8_t> single_sequence = {0b00101000, 0b00010001, 0b10001001, 0b11101000,
+                                                0b00010101, 0b01010101, 0b00100010, 0b11101010};
 
-//         std::vector<uint8_t> bits(sequence.begin(), sequence.end());
+        std::vector<uint8_t> sequence;
+        for (int i = 0; i < 30; i++)
+        {
+            sequence.insert(sequence.end(), single_sequence.begin(), single_sequence.end());
+        }
 
-//         AudioProfile ap(1000.0, {120, 244}); // 1000 μs bit time, low 120 Hz, high 244 Hz
-//         AudioTransmitter tx(ap);
+        std::vector<uint8_t> bits(sequence.begin(), sequence.end());
 
-//         tx.play_sequence(bits);
-//     }
-//     catch (const std::exception &e)
-//     {
-//         std::cerr << "Error: " << e.what() << '\n';
-//     }
+        AudioProfile ap(1000.0, {120, 244}); // 1000 μs bit time, low 120 Hz, high 244 Hz
+        AudioTransmitter tx(ap);
 
-//     return 0;
-// }
+        tx.play_sequence(bits);
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << '\n';
+    }
+
+    return 0;
+}

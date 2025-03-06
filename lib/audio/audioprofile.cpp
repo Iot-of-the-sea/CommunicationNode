@@ -46,24 +46,26 @@ void AudioProfile::print_info()
               << "High Frequencies: " << high << " Hz\n";
 }
 
-// // Example usage
-// int main()
-// {
-//     try
-//     {
-//         std::vector<double> freq_list = {1000, 2000};
-//         AudioProfile profile(500, freq_list); // 500 μs bit time
+// Example usage
+int test()
+{
+    try
+    {
+        std::vector<double> freq_list(2);
+        freq_list[0] = 1000;
+        freq_list[1] = 2000;
+        AudioProfile profile(500, freq_list); // 500 μs bit time
 
-//         profile.print_info();
+        profile.print_info();
 
-//         // Change sample rate
-//         profile.set_sample_rate(44100);
-//         std::cout << "Updated Sample Rate: " << profile.get_sample_rate() << " Hz\n";
-//     }
-//     catch (const std::exception &e)
-//     {
-//         std::cerr << "Error: " << e.what() << '\n';
-//     }
+        // Change sample rate
+        profile.set_sample_rate(44100);
+        std::cout << "Updated Sample Rate: " << profile.get_sample_rate() << " Hz\n";
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "Error: " << e.what() << '\n';
+    }
 
-//     return 0;
-// }
+    return 0;
+}
