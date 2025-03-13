@@ -2,7 +2,7 @@ import numpy as np
 import sounddevice as sd
 from audioobject import AudioObject
 from audioprofile import AudioProfile
-
+from scipy.io.wavfile import write
 
 class AudioTransmitter(AudioObject):
 
@@ -52,10 +52,18 @@ class AudioTransmitter(AudioObject):
         return self.generate_frequency(self.audio.high, start)
 
 
-sequence = "1110101000100010010101010001010111101000100010010001000100101000" * 30
+# sequence = "1110101000100010010101010001010111101000100010010001000100101000" * 30
+sequence = "10101010"
 sequence = sequence[::-1]
 
-ap = AudioProfile(1000, (120, 244))
+ap = AudioProfile(1000, (20000, 40000))
 tx = AudioTransmitter(ap)
 
 tx.play_sequence(sequence)
+sig, t = tx.generate_sequence(sequence)
+
+# Convert to 16-bit PCM format
+signal_int16 = np.int16(sig * 32767)
+
+# Write to WAV file
+write("output.wav", ap.sample_rate, signal_int16)

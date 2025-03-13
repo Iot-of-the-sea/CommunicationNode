@@ -5,7 +5,7 @@ using namespace chrono;
 
 NodeFSM node(false);
 
-AudioTransmitter audioTx(AudioProfile(5000.0, {240, 488}));
+AudioTransmitter audioTx(AudioProfile(1000.0, {240, 488}));
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
@@ -192,7 +192,6 @@ void SendDataFrameState::handle(NodeFSM &fsm)
         packetFromFrame(packet, nodeFrame);
         audioTx.play_sequence(packet, true);
         frameNum++;
-        usleep(100);
     }
     updateFrame(nodeFrame, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
     packetFromFrame(packet, nodeFrame);
