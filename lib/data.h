@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <cstring>
 #include "protocol.h"
 
 #endif // __DATA__
