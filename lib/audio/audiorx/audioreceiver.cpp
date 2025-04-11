@@ -1,11 +1,5 @@
-#include "AudioDevice.h"
-#include "Sampling.h"
-#include "PreambleDetector.h"
-#include <thread>
-#include <atomic>
-
-#include <string.h>
-using namespace std;
+#include "audioreceiver.h"
+#include <functional>
 
 atomic<bool> preambleDetected(false);
 
@@ -24,18 +18,20 @@ uint8_t init_receiver()
     }
 
     samplingThread = thread(samplingThreadFunc, pcm_handle);
-    preambleThread = thread(run, received_str);
+    preambleThread = thread(run, std::ref(received_str));
 
     return 0;
 }
 
-int listen()
+uint8_t listen(string &result)
 {
     samplingThread.join();
     preambleThread.join();
+    result = received_str;
+    return 0;
 }
 
-uint8_t close()
+uint8_t close_receiver()
 {
     AudioDevice::close(pcm_handle);
     return 0;

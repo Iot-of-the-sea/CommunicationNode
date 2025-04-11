@@ -33,7 +33,7 @@ void addSamplingData(const vector<float> &newData)
 	demodCond.notify_one();
 }
 
-static void demodulationThreadFunc()
+static void demodulationThreadFunc(string &output)
 {
 	string bitBuffer;
 	while (demodRunning)
@@ -55,20 +55,23 @@ static void demodulationThreadFunc()
 
 		float peakFreq = FFT::computePeakFrequency(fftSamples, 192, 192000);
 
-		if (peakFreq == 69750)
+		// if (peakFreq == 69750)
+		if (peakFreq >= 49500)
 		{
 			break; // Stop signal detected, exit loop
 		}
 		else
 		{
 			// Frequency in [62500, 63500] is interpreted as 0
-			if (peakFreq >= 62500 && peakFreq <= 63500)
+			// if (peakFreq >= 62500 && peakFreq <= 63500)
+			if (peakFreq >= 41500 && peakFreq <= 44500)
 			{
 				bitBuffer.push_back('0');
 				// cout << "0" << flush;
 			}
 			// Frequency in [66500, 67500] is interpreted as 1
-			else if (peakFreq >= 66500 && peakFreq <= 67500)
+			// else if (peakFreq >= 66500 && peakFreq <= 67500)
+			else if (peakFreq >= 45500 && peakFreq <= 48500)
 			{
 				bitBuffer.push_back('1');
 				// cout << "1" << flush;
@@ -87,12 +90,14 @@ static void demodulationThreadFunc()
 		result.push_back(byte);
 	}
 
+	output = result;
+
 	cout << endl
 		 << endl
 		 << "Received message: " << endl
 		 << result << endl
 		 << endl;
-	exit(0);
+	// exit(0);
 }
 
 // Start the demodulation thread, ensuring the PreambleDetector has already stopped
@@ -100,7 +105,7 @@ void startDemodulation(string &output)
 {
 	cout << "Starting Demodulation thread..." << endl;
 	demodRunning = true;
-	demodThread = thread(demodulationThreadFunc);
+	demodThread = thread(demodulationThreadFunc, ref(output));
 	cout << "Demodulation thread started." << endl;
 }
 
