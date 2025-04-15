@@ -14,7 +14,7 @@
 #define DATA_MODE (uint8_t)(0b1)
 
 #define ACK (uint8_t)(0b1111111)
-// #define NAK
+#define NAK_SEND (uint8_t)(0b0000000) // only for sending
 
 #define RTS (uint8_t)(0b1010101)
 #define CTS (uint8_t)(0b0101010)

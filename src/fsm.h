@@ -8,10 +8,20 @@
 #include <string>
 
 #include "../lib/audio/audiotransmitter.h"
-#include "../lib/audio/audioprofile.h"
+#include "../lib//audio/audioprofile.h"
 #include "../lib/protocol.h"
+#include "../lib/control.h"
 #include <fstream>
 #include <unistd.h>
+#include <string.h>
+
+#define DEPLOYED false
+
+#if DEPLOYED
+#include "../lib/audio/audiorx/audioreceiver.h"
+#else
+#include "../tst/testlib/audioreceiver_test.h"
+#endif
 
 using namespace std;
 
@@ -159,5 +169,7 @@ class ReadEOTState : public NodeState
 public:
     void handle(NodeFSM &fsm) override;
 };
+
+int runFSM();
 
 #endif // __FSM__

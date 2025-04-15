@@ -7,6 +7,8 @@
 #include <portaudio.h>
 #include "audioprofile.h" // Include your AudioProfile class
 
+#include "../data.h"
+
 class AudioTransmitter
 {
 private:
@@ -35,5 +37,9 @@ public:
     // Function to play the generated waveform using PortAudio
     void play_audio(const std::vector<double> &signal);
 };
+
+uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header);
+
+uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n);
 
 #endif // __AUDIO_TX__

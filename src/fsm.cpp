@@ -3,6 +3,9 @@
 using namespace std;
 using namespace chrono;
 
+string response;
+uint8_t headerByte, err;
+
 NodeFSM node(false);
 
 AudioTransmitter audioTx(AudioProfile(5000.0, {240, 488}));
@@ -13,9 +16,8 @@ frame nodeFrame = {
     .data = {}};
 
 std::vector<uint8_t> packet;
-string response;
 
-int main()
+int runFSM()
 {
     while (true)
     {
@@ -77,22 +79,22 @@ void CalibrateState::handle(NodeFSM &fsm)
 
         if (response == "y")
         {
-            cout << "ACK" << endl;
+            transmit_data(audioTx, CTRL_MODE, ACK);
+
             cout << "to stage read id" << endl;
             fsm.changeState(std::make_unique<ReadIDState>());
         }
         else
         {
-            cout << "NAK" << endl;
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+
             cout << "stay in calibrate" << endl;
         }
     }
     else
     {
-        cout << "ack/nak? ";
-        cin >> response;
-
-        if (response == "ack")
+        listen(response);
+        if (isAck(response))
         {
             cout << "to stage send id" << endl;
             fsm.changeState(std::make_unique<SendIDState>());
@@ -106,10 +108,8 @@ void CalibrateState::handle(NodeFSM &fsm)
 
 void SendIDState::handle(NodeFSM &fsm)
 {
-    cout << "ack/nak? ";
-    cin >> response;
-
-    if (response == "ack")
+    listen(response);
+    if (isAck(response))
     {
         cout << "to stage send rts" << endl;
         fsm.changeState(std::make_unique<SendRTSState>());
@@ -122,14 +122,11 @@ void SendIDState::handle(NodeFSM &fsm)
 
 void SendRTSState::handle(NodeFSM &fsm)
 {
-    updateFrame(nodeFrame, CTRL_MODE, RTS);
-    packetFromFrame(packet, nodeFrame);
-    audioTx.play_sequence(packet, true);
+    transmit_data(audioTx, CTRL_MODE, RTS);
 
-    cout << "cts? (y/n) ";
-    cin >> response;
-
-    if (response == "y")
+    listen(response, string(1, static_cast<char>(CTS)));
+    err = getHeaderByte(response, headerByte);
+    if (!err && headerByte == CTS)
     {
         cout << "to stage send header" << endl;
         fsm.changeState(std::make_unique<SendHeaderState>());
@@ -142,10 +139,8 @@ void SendRTSState::handle(NodeFSM &fsm)
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
-    cout << "ack/nak? ";
-    cin >> response;
-
-    if (response == "ack")
+    listen(response);
+    if (isAck(response))
     {
         cout << "to stage send data start" << endl;
         fsm.changeState(std::make_unique<SendDataStartState>());
@@ -158,14 +153,10 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
 void SendDataStartState::handle(NodeFSM &fsm)
 {
-    updateFrame(nodeFrame, CTRL_MODE, DATA_START);
-    packetFromFrame(packet, nodeFrame);
-    audioTx.play_sequence(packet, true);
+    transmit_data(audioTx, CTRL_MODE, DATA_START);
 
-    cout << "ack/nak? ";
-    cin >> response;
-
-    if (response == "ack")
+    listen(response);
+    if (isAck(response))
     {
         cout << "to stage send data" << endl;
         fsm.changeState(std::make_unique<SendDataFrameState>());
@@ -186,7 +177,7 @@ void SendDataFrameState::handle(NodeFSM &fsm)
 
     char *frameBuf = new char[FRAME_SIZE_BYTES];
     uint8_t frameNum = 0;
-    while (ifile.read(frameBuf, FRAME_SIZE_BYTES))
+    while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
     {
         updateFrame(nodeFrame, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
         packetFromFrame(packet, nodeFrame);
@@ -215,14 +206,10 @@ void SendDataFrameState::handle(NodeFSM &fsm)
 
 void SendEOTState::handle(NodeFSM &fsm)
 {
-    updateFrame(nodeFrame, CTRL_MODE, EOT);
-    packetFromFrame(packet, nodeFrame);
-    audioTx.play_sequence(packet, true);
+    transmit_data(audioTx, CTRL_MODE, EOT);
 
-    cout << "ack/nak? ";
-    cin >> response;
-
-    if (response == "ack")
+    listen(response);
+    if (isAck(response))
     {
         cout << "to stage idle" << endl;
         fsm.changeState(std::make_unique<IdleState>());
@@ -239,10 +226,8 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
     cin >> response;
     if (response == "n")
     {
-        cout << "ack/nak? ";
-        cin >> response;
-
-        if (response == "ack")
+        listen(response);
+        if (isAck(response))
         {
             if (fsm.getIsROVMode())
             {
@@ -297,10 +282,9 @@ void ReadIDState::handle(NodeFSM &fsm)
 
 void ReadRTSState::handle(NodeFSM &fsm)
 {
-    cout << "rts? (y/n) ";
-    cin >> response;
-
-    if (response == "y")
+    listen(response, string(1, static_cast<char>(RTS)));
+    err = getHeaderByte(response, headerByte);
+    if (!err && headerByte == RTS)
     {
         updateFrame(nodeFrame, CTRL_MODE, CTS);
         packetFromFrame(packet, nodeFrame);
@@ -336,10 +320,9 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
 void ReadDataStartState::handle(NodeFSM &fsm)
 {
-    cout << "valid? (y/n) ";
-    cin >> response;
-
-    if (response == "y")
+    listen(response, string(1, static_cast<char>(DATA_START)));
+    err = getHeaderByte(response, headerByte);
+    if (!err && headerByte == DATA_START)
     {
         cout << "ACK" << endl;
         cout << "to stage read data frames" << endl;
@@ -354,10 +337,9 @@ void ReadDataStartState::handle(NodeFSM &fsm)
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
-    cout << "done? (y/n) ";
-    cin >> response;
-
-    if (response == "y")
+    listen(response, string(1, static_cast<char>(DATA_DONE)));
+    err = getHeaderByte(response, headerByte);
+    if (!err && headerByte == DATA_DONE)
     {
         cout << "confirmation code" << endl;
         cout << "to stage read confirmation" << endl;
@@ -431,10 +413,9 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
 
 void ReadEOTState::handle(NodeFSM &fsm)
 {
-    cout << "valid? (y/n) ";
-    cin >> response;
-
-    if (response == "y")
+    listen(response, string(1, static_cast<char>(EOT)));
+    err = getHeaderByte(response, headerByte);
+    if (!err && headerByte == EOT)
     {
         cout << "ACK" << endl;
         cout << "to stage idle" << endl;

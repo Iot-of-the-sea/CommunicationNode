@@ -107,6 +107,41 @@ void AudioTransmitter::play_audio(const std::vector<double> &signal)
     Pa_Terminate();
 }
 
+uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header)
+{
+    uint8_t err;
+
+    frame tx_frame = {
+        .mode = mode,
+        .header = header,
+        .data = {}};
+
+    std::vector<uint8_t> packet;
+
+    err = packetFromFrame(packet, tx_frame);
+    tx.play_sequence(packet, true);
+    return err;
+}
+
+// TODO: simplify these two functions
+uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n)
+{
+    uint8_t err;
+
+    frame tx_frame = {
+        .mode = mode,
+        .header = header,
+        .data = {}};
+
+    std::memcpy(tx_frame.data, data_n, FRAME_SIZE_BYTES);
+    std::vector<uint8_t> packet;
+
+    err = packetFromFrame(packet, tx_frame);
+    tx.play_sequence(packet, true);
+    return err;
+    return 0;
+}
+
 // // Main function to run the example
 // int test()
 // {

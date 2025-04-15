@@ -2,38 +2,54 @@
 CC = g++
 CFLAGS = -g -Wall -std=c++17
 
-TST_DIR = ./tst
-LIB_DIR = ./lib
-BUILD_DIR = ./build
-SRC = ./src
+TST = tst
+BUILD = build
 
-PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
+PA = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
+# PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
+
+SRC_DIRS := src lib lib/audio tst/testlib
+BUILD_DIRS := $(addprefix $(BUILD)/, $(SRC_DIRS))
+SRC_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
+
+OBJ := $(patsubst %.cpp,$(BUILD)/%.o,$(SRC_FILES))
 
 all: program
 
-program: $(BUILD_DIR)/audiotransmitter.o $(BUILD_DIR)/data.o $(SRC)/fsm.cpp $(SRC)/fsm.h
-	$(CC) $(CFLAGS) -o program $(SRC)/fsm.cpp $(BUILD_DIR)/audiotransmitter.o $(BUILD_DIR)/audioprofile.o $(BUILD_DIR)/data.o $(PA)
+debug: debug_program
 
-$(BUILD_DIR)/audioprofile.o: $(LIB_DIR)/audio/audioprofile.h $(LIB_DIR)/audio/audioprofile.cpp
-	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audioprofile.cpp -o $(BUILD_DIR)/audioprofile.o
+program: $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) -o run $(PA)
 
-$(BUILD_DIR)/audiotransmitter.o: $(BUILD_DIR)/audioprofile.o $(LIB_DIR)/audio/audiotransmitter.cpp $(LIB_DIR)/audio/audiotransmitter.h
-	$(CC) $(CFLAGS) -c $(LIB_DIR)/audio/audiotransmitter.cpp -o $(BUILD_DIR)/audiotransmitter.o $(PA)
+$(OBJ): | $(BUILD_DIRS)
 
-$(BUILD_DIR)/data.o: $(LIB_DIR)/data.cpp
-	$(CC) $(CFLAGS) -c $(LIB_DIR)/data.cpp -o $(BUILD_DIR)/data.o
+$(BUILD)/%.o: %.cpp
+	$(CC) $(CFLAGS) $(PA) -c $< -o $@
+
+$(BUILD_DIRS):
+	mkdir -p $@
+
+debug_program: $(BUILD)/audiotransmitter.o $(BUILD)/data.o $(BUILD)/control.o $(SRC)/fsm.cpp $(SRC)/fsm.h
+	$(CC) $(CFLAGS) -o program $(SRC)/fsm.cpp $(BUILD)/audiotransmitter.o $(BUILD)/audioprofile.o $(BUILD)/data.o $(PA)
+
 
 data: data.o
-	$(CC) $(CFLAGS) -o $(BUILD_DIR)/data $(BUILD_DIR)/data.o
+	$(CC) $(CFLAGS) -o $(BUILD)/data $(BUILD)/data.o
 
-unity.o: $(TST_DIR)/unity/unity.c $(TST_DIR)/unity/unity.h
-	$(CC) $(CFLAGS) -c $(TST_DIR)/unity/unity.c -o $(BUILD_DIR)/unity.o
+unity.o: $(TST)/unity/unity.c $(TST)/unity/unity.h
+	$(CC) $(CFLAGS) -c $(TST)/unity/unity.c -o $(BUILD)/unity.o
 
-test: unity.o $(TST_DIR)/data_tests.cpp $(LIB_DIR)/protocol.h $(LIB_DIR)/data.cpp
-	$(CC) $(CFLAGS) -o $(TST_DIR)/data_tests $(BUILD_DIR)/unity.o $(TST_DIR)/data_tests.cpp $(LIB_DIR)/data.cpp
+data_test: unity.o $(TST)/data_tests.cpp $(LIB)/protocol.h $(LIB)/data.cpp
+	$(CC) $(CFLAGS) -o $(TST)/data_tests $(BUILD)/unity.o $(TST)/data_tests.cpp $(LIB)/data.cpp
 
-run_test: test
-	$(TST_DIR)/data_tests
+ctrl_test: unity.o $(TST)/ctrl_tests.cpp
+	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp $(LIB)/control.cpp
+
+run_test: data_test ctrl_test
+	$(TST)/data_tests
+	$(TST)/ctrl_tests
 
 clean:
 	rm -f **/*.o ./lib/audio/audiotransmitter ./program ./tst/data_tests ./build/data
+
+.PHONY: all clean
