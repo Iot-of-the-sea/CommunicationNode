@@ -8,8 +8,6 @@
 #define FRAME_SIZE 256
 #define FRAME_SIZE_BYTES FRAME_SIZE / 8
 
-#define CRC8 (uint8_t)(0x07)
-
 #define CTRL_MODE (uint8_t)(0b0)
 #define DATA_MODE (uint8_t)(0b1)
 

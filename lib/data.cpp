@@ -3,7 +3,7 @@
 uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n, uint8_t *data_n)
 {
     updateFrame(frame, mode_n, header_n);
-    std::memcpy(frame.data, data_n, FRAME_SIZE_BYTES);
+    memcpy(frame.data, data_n, FRAME_SIZE_BYTES);
     return 0;
 }
 
@@ -14,7 +14,7 @@ uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n)
     return 0;
 }
 
-uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame)
+uint8_t packFrame(vector<uint8_t> &signal, frame &frame)
 {
     uint8_t headerByte = frame.header | (frame.mode << 7);
 
@@ -35,10 +35,10 @@ uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame)
 }
 
 // includes CRC8
-uint8_t packetFromFrame(std::vector<uint8_t> &packet, frame &frame)
+uint8_t packetFromFrame(vector<uint8_t> &packet, frame &frame)
 {
     packFrame(packet, frame);
-    packet.push_back(CRC8); // TODO: test if this is doing anything
+    packet.push_back(find_crc(packet)); // TODO: test if this is doing anything
 
     return 0;
 }
@@ -46,7 +46,7 @@ uint8_t packetFromFrame(std::vector<uint8_t> &packet, frame &frame)
 uint8_t printFrame(frame &frame)
 {
     char chunk[10];
-    std::string out;
+    string out;
     snprintf(chunk, 10, "%d | %x |", frame.mode == DATA_MODE, frame.header);
     out = chunk;
 
@@ -56,37 +56,31 @@ uint8_t printFrame(frame &frame)
         out += chunk;
     }
 
-    std::cout << out << std::endl;
+    cout << out << endl;
 
     return 0;
 }
 
-// int test()
-// {
-//     std::ifstream ifile("./lib/01102521.csv", std::ifstream::binary); // Open the file
-//     std::ofstream ofile("./lib/out.txt", std::ifstream::binary);
+// returns expected crc
+crc_t find_crc(string &packet) {
+    crc_t crc = crc_init();
+    crc = crc_update(crc, packet.data(), packet.size());
+    crc = crc_finalize(crc);
+    return crc;
+}
 
-//     if (!(ifile && ofile))
-//     {
-//         std::cerr << "Error opening file!" << std::endl;
-//         return 1;
-//     }
+// returns expected crc
+crc_t find_crc(vector<uint8_t> &packet) {
+    crc_t crc = crc_init();
+    crc = crc_update(crc, packet.data(), packet.size());
+    crc = crc_finalize(crc);
+    return crc;
+}
 
-//     char *frameBuf = new char[FRAME_SIZE_BYTES];
-//     frame dataFrame = {
-//         .mode = DATA_MODE,
-//         .header = 0,
-//         .data = {}};
-//     while (ifile.read(frameBuf, FRAME_SIZE_BYTES))
-//     {
-//         std::memcpy(dataFrame.data, reinterpret_cast<uint8_t *>(frameBuf), FRAME_SIZE_BYTES);
-//         printFrame(dataFrame);
-//         ofile.write(frameBuf, FRAME_SIZE_BYTES);
-//         dataFrame.header++;
-//     }
-//     ofile.write(frameBuf, ifile.gcount());
+uint8_t check_received_crc(string packet) {
+    crc_t expected = (crc_t)packet[packet.size()-1];
+    packet.pop_back();
+    crc_t actual = find_crc(packet);
 
-//     ifile.close(); // Close the file
-//     ofile.close(); // Close the file
-//     return 0;
-// }
+    return actual == expected;
+}

@@ -36,14 +36,14 @@ debug_program: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/data.o $(BUILD)/co
 data: data.o
 	$(CC) $(CFLAGS) -o $(BUILD)/data $(BUILD)/data.o
 
-unity.o: $(TST)/unity/unity.c $(TST)/unity/unity.h
+unity.o: $(TST)/unity/unity.c $(TST)/unity/unity.h | $(BUILD_DIRS)
 	$(CC) $(CFLAGS) -c $(TST)/unity/unity.c -o $(BUILD)/unity.o
 
-data_test: unity.o $(TST)/data_tests.cpp $(LIB)/protocol.h $(LIB)/data.cpp
-	$(CC) $(CFLAGS) -o $(TST)/data_tests $(BUILD)/unity.o $(TST)/data_tests.cpp $(LIB)/data.cpp
+data_test: unity.o $(TST)/data_tests.cpp $(BUILD)/lib/data.o
+	$(CC) $(CFLAGS) -o $(TST)/data_tests $(BUILD)/unity.o $(TST)/data_tests.cpp lib/data.cpp lib/crc8.c
 
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
-	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp $(LIB)/control.cpp
+	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp lib/control.cpp
 
 file_tx_test: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp
 	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA)
@@ -53,6 +53,6 @@ run_test: data_test ctrl_test
 	$(TST)/ctrl_tests
 
 clean:
-	rm -f **/*.o ./lib/audio/audiotransmitter ./program ./tst/data_tests ./build/data
+	rm -rf build/
 
 .PHONY: all clean
