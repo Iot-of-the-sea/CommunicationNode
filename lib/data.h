@@ -7,11 +7,13 @@
 #include <cstring>
 #include "crc8.h"
 #include "protocol.h"
+#include "control.h"
 
 using namespace std;
 
 crc_t find_crc(string &packet);
 crc_t find_crc(vector<uint8_t> &packet);
 uint8_t check_received_crc(string packet);
+uint8_t get_packet_data(string &packet, string &data);
 
 #endif // __DATA__

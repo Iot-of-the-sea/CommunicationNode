@@ -1,6 +1,6 @@
 #include "../lib/audio/audiotransmitter.h"
 
-AudioTransmitter audioTx(AudioProfile(50000.0, {240, 488}, 750));
+AudioTransmitter audioTx(AudioProfile(1000.0, {240, 488}, 70000));
 
 int main()
 {

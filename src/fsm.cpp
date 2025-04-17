@@ -318,8 +318,13 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     }
     else
     {
-        transmit_data(audioTx, CTRL_MODE,
-                      check_received_crc(response) ? ACK : NAK_SEND);
+        if (check_received_crc(response)) {
+            string packet_data;
+            transmit_data(audioTx, CTRL_MODE, ACK);
+            get_packet_data(response, packet_data);
+            cout << packet_data << endl;
+        }
+        
         cout << "stay in read data frames" << endl;
     }
 }

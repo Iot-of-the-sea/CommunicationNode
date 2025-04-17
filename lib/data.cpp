@@ -43,6 +43,15 @@ uint8_t packetFromFrame(vector<uint8_t> &packet, frame &frame)
     return 0;
 }
 
+uint8_t get_packet_data(string &packet, string &data)
+{
+    if (packet.size() < 3)
+        return EMPTY_PACKET_ERROR;
+
+    data = packet.substr(1, packet.length() - 2);
+    return 0;
+}
+
 uint8_t printFrame(frame &frame)
 {
     char chunk[10];
@@ -62,7 +71,8 @@ uint8_t printFrame(frame &frame)
 }
 
 // returns expected crc
-crc_t find_crc(string &packet) {
+crc_t find_crc(string &packet)
+{
     crc_t crc = crc_init();
     crc = crc_update(crc, packet.data(), packet.size());
     crc = crc_finalize(crc);
@@ -70,15 +80,17 @@ crc_t find_crc(string &packet) {
 }
 
 // returns expected crc
-crc_t find_crc(vector<uint8_t> &packet) {
+crc_t find_crc(vector<uint8_t> &packet)
+{
     crc_t crc = crc_init();
     crc = crc_update(crc, packet.data(), packet.size());
     crc = crc_finalize(crc);
     return crc;
 }
 
-uint8_t check_received_crc(string packet) {
-    crc_t expected = (crc_t)packet[packet.size()-1];
+uint8_t check_received_crc(string packet)
+{
+    crc_t expected = (crc_t)packet[packet.size() - 1];
     packet.pop_back();
     crc_t actual = find_crc(packet);
 

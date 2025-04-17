@@ -4,8 +4,57 @@ AudioTransmitter::AudioTransmitter(const AudioProfile &profile) : audio(profile)
 
 uint8_t AudioTransmitter::init_stream()
 {
-    Pa_Initialize();
-    Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, audio.get_sample_rate(), paFramesPerBufferUnspecified, nullptr, nullptr);
+    PaError err = Pa_Initialize();
+    if (err != paNoError)
+    {
+        std::cerr << "PortAudio initialization error: " << Pa_GetErrorText(err) << std::endl;
+        return 1;
+    }
+
+    int deviceCount = Pa_GetDeviceCount();
+    if (deviceCount < 0)
+    {
+        std::cerr << "PortAudio error getting device count: " << Pa_GetErrorText(err) << std::endl;
+        Pa_Terminate();
+        return 1;
+    }
+
+    std::cout << "Available audio devices:" << std::endl;
+    for (int i = 0; i < deviceCount; ++i)
+    {
+        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
+        std::cout << "  " << i << ": " << deviceInfo->name << " (Input channels: "
+                  << deviceInfo->maxInputChannels << ", Output channels: "
+                  << deviceInfo->maxOutputChannels << ")" << std::endl;
+    }
+
+    int selectedDeviceIndex;
+    std::cout << "Enter the index of the desired device: ";
+    std::cin >> selectedDeviceIndex;
+
+    if (selectedDeviceIndex < 0 || selectedDeviceIndex >= deviceCount)
+    {
+        std::cerr << "Invalid device index." << std::endl;
+        Pa_Terminate();
+        return 1;
+    }
+
+    PaStreamParameters outputParameters;
+    outputParameters.device = selectedDeviceIndex;
+    outputParameters.channelCount = 1; // Mono output
+    outputParameters.sampleFormat = paFloat32;
+    outputParameters.suggestedLatency = Pa_GetDeviceInfo(selectedDeviceIndex)->defaultLowOutputLatency;
+    outputParameters.hostApiSpecificStreamInfo = nullptr;
+
+    err = Pa_OpenStream(&stream, nullptr, &outputParameters, audio.get_sample_rate(), paFramesPerBufferUnspecified, paNoFlag, nullptr, nullptr);
+    if (err != paNoError)
+    {
+        std::cerr << "PortAudio error opening stream: " << Pa_GetErrorText(err) << std::endl;
+        Pa_Terminate();
+        return 1;
+    }
+
+    // Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, audio.get_sample_rate(), paFramesPerBufferUnspecified, nullptr, nullptr);
     Pa_StartStream(stream);
     stream_status = 1;
 
