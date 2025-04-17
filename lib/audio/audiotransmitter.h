@@ -9,37 +9,47 @@
 
 #include "../data.h"
 
+using namespace std;
+
 class AudioTransmitter
 {
 private:
     AudioProfile audio;
+    PaStream *stream;
+    uint8_t stream_status;
 
 public:
     // Constructor
     explicit AudioTransmitter(const AudioProfile &profile);
 
+    uint8_t init_stream();
+
+    uint8_t close_stream();
+
     // Function to play sequence
-    void play_sequence(std::vector<uint8_t> &sequence, bool preamble = false);
+    void play_sequence(vector<uint8_t> &sequence, bool preamble = false);
 
     // Function to generate a bit sequence waveform
     // little endian
-    std::vector<double> generate_sequence(std::vector<uint8_t> &bytes, bool preamble = false);
+    vector<double> generate_sequence(vector<uint8_t> &bytes, bool preamble = false);
 
     // Generate a sine wave of a given frequency
-    std::vector<double> generate_frequency(double freq, double start = 0);
+    vector<double> generate_frequency(double freq, double start = 0);
 
     // Generate low-frequency wave
-    std::vector<double> generate_low(double start);
+    vector<double> generate_low(double start);
 
     // Generate high-frequency wave
-    std::vector<double> generate_high(double start);
+    vector<double> generate_high(double start);
 
     // Function to play the generated waveform using PortAudio
-    void play_audio(const std::vector<double> &signal);
+    void play_audio(const vector<double> &signal);
 };
 
 uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header);
 
 uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n);
+
+uint8_t transmit_file(AudioTransmitter &tx, const char *file);
 
 #endif // __AUDIO_TX__

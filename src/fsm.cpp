@@ -8,12 +8,12 @@ uint8_t headerByte, err;
 
 NodeFSM node(false);
 
-AudioTransmitter audioTx(AudioProfile(5000.0, {240, 488}));
+AudioTransmitter audioTx(AudioProfile(100000.0, {240, 488}));
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
     .header = 0,
-    .data = {}};
+    .data = {0}};
 
 std::vector<uint8_t> packet;
 
@@ -37,6 +37,7 @@ void IdleState::handle(NodeFSM &fsm)
     cin >> response;
     if (response == "y")
     {
+        audioTx.init_stream();
         if (fsm.getIsROVMode())
         {
             cout << "to stage search" << endl;
@@ -169,39 +170,11 @@ void SendDataStartState::handle(NodeFSM &fsm)
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
-    std::ifstream ifile("./lib/test.txt", std::ifstream::binary); // Open the file
-    if (!ifile)
-    {
-        std::cerr << "Error opening file!" << std::endl;
-    }
+    transmit_file(audioTx, "./lib/test.txt");
 
-    char *frameBuf = new char[FRAME_SIZE_BYTES];
-    uint8_t frameNum = 0;
-    while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
-    {
-        updateFrame(nodeFrame, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
-        packetFromFrame(packet, nodeFrame);
-        audioTx.play_sequence(packet, true);
-        frameNum++;
-        usleep(100);
-    }
-    updateFrame(nodeFrame, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
-    packetFromFrame(packet, nodeFrame);
-    audioTx.play_sequence(packet, true);
-
-    ifile.close(); // Close the file
-
-    cout << "done? (y/n) ";
-    cin >> response;
-    if (response == "y")
-    {
-        cout << "to stage echo confirmation" << endl;
-        fsm.changeState(std::make_unique<EchoConfirmationState>());
-    }
-    else
-    {
-        cout << "stay in send data frame" << endl;
-    }
+    transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    cout << "to stage echo confirmation" << endl;
+    fsm.changeState(std::make_unique<EchoConfirmationState>());
 }
 
 void SendEOTState::handle(NodeFSM &fsm)
@@ -211,6 +184,7 @@ void SendEOTState::handle(NodeFSM &fsm)
     listen(response);
     if (isAck(response))
     {
+        audioTx.close_stream();
         cout << "to stage idle" << endl;
         fsm.changeState(std::make_unique<IdleState>());
     }
@@ -269,13 +243,13 @@ void ReadIDState::handle(NodeFSM &fsm)
 
     if (response == "y")
     {
-        cout << "ACK" << endl;
+        transmit_data(audioTx, CTRL_MODE, ACK);
         cout << "to stage read rts" << endl;
         fsm.changeState(std::make_unique<ReadRTSState>());
     }
     else
     {
-        cout << "NAK" << endl;
+        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
         cout << "stay in read id" << endl;
     }
 }
@@ -286,11 +260,7 @@ void ReadRTSState::handle(NodeFSM &fsm)
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == RTS)
     {
-        updateFrame(nodeFrame, CTRL_MODE, CTS);
-        packetFromFrame(packet, nodeFrame);
-        audioTx.play_sequence(packet, true);
-
-        cout << "CTS" << endl;
+        transmit_data(audioTx, CTRL_MODE, CTS);
         cout << "to stage read header" << endl;
         fsm.changeState(std::make_unique<ReadHeaderState>());
     }
@@ -307,7 +277,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
     if (response == "y")
     {
-        cout << "ACK" << endl;
+        transmit_data(audioTx, CTRL_MODE, ACK);
         cout << "to stage read data start" << endl;
         fsm.changeState(std::make_unique<ReadDataStartState>());
     }
@@ -324,13 +294,13 @@ void ReadDataStartState::handle(NodeFSM &fsm)
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == DATA_START)
     {
-        cout << "ACK" << endl;
+        transmit_data(audioTx, CTRL_MODE, ACK);
         cout << "to stage read data frames" << endl;
         fsm.changeState(std::make_unique<ReadDataFrameState>());
     }
     else
     {
-        cout << "NAK" << endl;
+        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
         cout << "stay in read data start" << endl;
     }
 }
@@ -352,11 +322,11 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
 
         if (response == "y")
         {
-            cout << "ACK";
+            transmit_data(audioTx, CTRL_MODE, ACK);
         }
         else
         {
-            cout << "NAK";
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
         }
         cout << endl;
         cout << "stay in read data frames" << endl;
@@ -380,7 +350,7 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
 
         if (response == "y")
         {
-            cout << "ACK" << endl;
+            transmit_data(audioTx, CTRL_MODE, ACK);
             if (fsm.getIsROVMode())
             {
                 cout << "transmit? (y/n) ";
@@ -405,7 +375,7 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
         }
         else
         {
-            cout << "NAK" << endl;
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             cout << "stay in read confirmation" << endl;
         }
     }
@@ -417,13 +387,14 @@ void ReadEOTState::handle(NodeFSM &fsm)
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == EOT)
     {
-        cout << "ACK" << endl;
+        transmit_data(audioTx, CTRL_MODE, ACK);
+        audioTx.close_stream();
         cout << "to stage idle" << endl;
         fsm.changeState(std::make_unique<IdleState>());
     }
     else
     {
-        cout << "NAK" << endl;
+        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
         cout << "stay in read eot" << endl;
     }
 }

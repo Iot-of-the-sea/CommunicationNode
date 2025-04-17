@@ -29,7 +29,7 @@ $(BUILD)/%.o: %.cpp
 $(BUILD_DIRS):
 	mkdir -p $@
 
-debug_program: $(BUILD)/audiotransmitter.o $(BUILD)/data.o $(BUILD)/control.o $(SRC)/fsm.cpp $(SRC)/fsm.h
+debug_program: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/data.o $(BUILD)/control.o $(SRC)/fsm.cpp $(SRC)/fsm.h
 	$(CC) $(CFLAGS) -o program $(SRC)/fsm.cpp $(BUILD)/audiotransmitter.o $(BUILD)/audioprofile.o $(BUILD)/data.o $(PA)
 
 
@@ -44,6 +44,9 @@ data_test: unity.o $(TST)/data_tests.cpp $(LIB)/protocol.h $(LIB)/data.cpp
 
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
 	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp $(LIB)/control.cpp
+
+file_tx_test: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp
+	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA)
 
 run_test: data_test ctrl_test
 	$(TST)/data_tests
