@@ -8,7 +8,7 @@ uint8_t headerByte, err;
 
 NodeFSM node(false);
 
-AudioTransmitter audioTx(AudioProfile(100000.0, {240, 488}));
+AudioTransmitter audioTx(AudioProfile(1000.0, {240, 488}, 70000));
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
@@ -171,6 +171,7 @@ void SendDataStartState::handle(NodeFSM &fsm)
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
     transmit_file(audioTx, "./lib/test.txt");
+    // transmit_file(audioTx, "./lib/01102521.csv");
 
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     cout << "to stage echo confirmation" << endl;

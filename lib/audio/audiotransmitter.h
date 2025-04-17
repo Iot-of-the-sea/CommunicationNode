@@ -42,6 +42,9 @@ public:
     // Generate high-frequency wave
     vector<double> generate_high(double start);
 
+    // Generate stop-frequency wave
+    vector<double> generate_stop(double start);
+
     // Function to play the generated waveform using PortAudio
     void play_audio(const vector<double> &signal);
 };

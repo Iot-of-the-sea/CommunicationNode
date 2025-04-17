@@ -75,6 +75,10 @@ vector<double> AudioTransmitter::generate_sequence(vector<uint8_t> &bytes, bool 
         }
     }
 
+    // Generate stop signal
+    bit_wave = generate_stop(offset);
+    y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+
     return y;
 }
 
@@ -106,6 +110,12 @@ vector<double> AudioTransmitter::generate_low(double start)
 vector<double> AudioTransmitter::generate_high(double start)
 {
     return generate_frequency(audio.get_high(), start);
+}
+
+// Generate high-frequency wave
+vector<double> AudioTransmitter::generate_stop(double start)
+{
+    return generate_frequency(audio.get_stop(), start);
 }
 
 // Function to play the generated waveform using PortAudio
@@ -169,6 +179,8 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     vector<string> chunks;
     char *frameBuf = new char[FRAME_SIZE_BYTES];
     uint8_t frameNum = 0;
+
+    // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
     {
         chunks.push_back(string(frameBuf, FRAME_SIZE_BYTES));
@@ -179,7 +191,6 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     while (frameNum < chunks.size())
     {
         frameBuf = chunks.at(frameNum).data();
-        cout << reinterpret_cast<uint8_t *>(frameBuf) << endl;
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
         frameNum++;
     }
