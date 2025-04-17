@@ -55,7 +55,7 @@ public:
 
     NodeFSM(bool rov_mode) : _state(std::make_unique<IdleState>()), _rov_mode(rov_mode)
     {
-        cout << _rov_mode << endl;
+        cout << "selected mode: " << _rov_mode << endl;
     }
 
     void changeState(std::unique_ptr<NodeState> newState)
@@ -170,6 +170,6 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-int runFSM();
+int runFSM(bool rovMode);
 
 #endif // __FSM__

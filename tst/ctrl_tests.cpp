@@ -106,6 +106,24 @@ void getHeaderByte_shouldReturnSuccess_and_correctHeader_givenOneBytePacket()
     TEST_ASSERT_EQUAL(48, header);
 }
 
+void generateEvenParityByte_shouldReturn_evenParityByte()
+{
+    for (int i = 0; i < 10; i++)
+    {
+        uint8_t testByte = generate_parity_byte(true);
+        TEST_ASSERT_TRUE_MESSAGE(check_byte_even_parity(testByte), reinterpret_cast<char *>(testByte));
+    }
+}
+
+void generateOddParityByte_shouldReturn_oddParityByte()
+{
+    for (int i = 0; i < 10; i++)
+    {
+        uint8_t testByte = generate_parity_byte(false);
+        TEST_ASSERT_FALSE_MESSAGE(check_byte_even_parity(testByte), reinterpret_cast<char *>(testByte));
+    }
+}
+
 int main()
 {
     UNITY_BEGIN();
@@ -120,6 +138,9 @@ int main()
     RUN_TEST(getHeaderByte_shouldReturnEmptyPacketError_fromEmptyPacket);
     RUN_TEST(getHeaderByte_shouldReturnSuccess_and_correctHeader_givenFullPacket);
     RUN_TEST(getHeaderByte_shouldReturnSuccess_and_correctHeader_givenOneBytePacket);
+
+    RUN_TEST(generateEvenParityByte_shouldReturn_evenParityByte);
+    RUN_TEST(generateOddParityByte_shouldReturn_oddParityByte);
 
     return UNITY_END();
 }

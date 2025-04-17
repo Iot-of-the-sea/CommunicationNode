@@ -6,8 +6,6 @@ using namespace chrono;
 string response;
 uint8_t headerByte, err;
 
-NodeFSM node(false);
-
 AudioTransmitter audioTx(AudioProfile(1000.0, {240, 488}, 70000));
 
 frame nodeFrame = {
@@ -15,10 +13,13 @@ frame nodeFrame = {
     .header = 0,
     .data = {0}};
 
-std::vector<uint8_t> packet;
+vector<uint8_t> packet;
+uint8_t confirmation = 0;
 
-int runFSM()
+int runFSM(bool rovMode)
 {
+    NodeFSM node(rovMode);
+
     while (true)
     {
         node.update(); // Runs FSM indefinitely
@@ -312,19 +313,23 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == DATA_DONE)
     {
-        cout << "confirmation code" << endl;
+        bool hasFile = true; // TODO: change to variable
+        confirmation = generate_parity_byte(hasFile);
+        uint8_t confirmation_arr[1] = {confirmation};
+        transmit_data(audioTx, DATA_MODE, 0x00, confirmation_arr);
         cout << "to stage read confirmation" << endl;
         fsm.changeState(std::make_unique<ReadConfirmationState>());
     }
     else
     {
-        if (check_received_crc(response)) {
+        if (check_received_crc(response))
+        {
             string packet_data;
             transmit_data(audioTx, CTRL_MODE, ACK);
             get_packet_data(response, packet_data);
             cout << packet_data << endl;
         }
-        
+
         cout << "stay in read data frames" << endl;
     }
 }
