@@ -284,7 +284,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     }
     else
     {
-        cout << "NAK" << endl;
+        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
         cout << "stay in read header" << endl;
     }
 }
@@ -318,18 +318,8 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     }
     else
     {
-        cout << "good crc? (y/n) ";
-        cin >> response;
-
-        if (response == "y")
-        {
-            transmit_data(audioTx, CTRL_MODE, ACK);
-        }
-        else
-        {
-            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-        }
-        cout << endl;
+        transmit_data(audioTx, CTRL_MODE,
+                      check_received_crc(response) ? ACK : NAK_SEND);
         cout << "stay in read data frames" << endl;
     }
 }
