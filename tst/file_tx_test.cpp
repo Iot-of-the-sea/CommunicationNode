@@ -1,13 +1,13 @@
 #include "../lib/audio/audiotransmitter.h"
 
-AudioTransmitter audioTx(AudioProfile(500000.0, {240, 488}, 750));
+AudioTransmitter audioTx(AudioProfile(50000.0, {240, 488}, 750));
 
 int main()
 {
     audioTx.init_stream();
     cout << "stream initialized" << endl;
-    // transmit_file(audioTx, "./tst/test.txt");
-    transmit_data(audioTx, CTRL_MODE, RTS);
+    transmit_file(audioTx, "./tst/test.txt");
+    // transmit_data(audioTx, CTRL_MODE, RTS);
     audioTx.close_stream();
 }
 

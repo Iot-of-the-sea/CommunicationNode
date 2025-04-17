@@ -2,6 +2,7 @@
 #define __AUDIO_RECEIVER_TEST__
 
 #include <string.h>
+#include <random>
 #include "../../lib/protocol.h"
 
 using namespace std;

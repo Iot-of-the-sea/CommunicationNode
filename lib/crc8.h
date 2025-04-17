@@ -37,8 +37,8 @@
  * crc = crc_finalize(crc);
  * \endcode
  */
-#ifndef CRC8_H
-#define CRC8_H
+#ifndef __CRC8_H__
+#define __CRC8_H__
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -100,4 +100,4 @@ crc_t crc_finalize(crc_t crc);
 }           /* closing brace for extern "C" */
 #endif
 
-#endif      /* CRC8_H */
+#endif      /* __CRC8_H__ */

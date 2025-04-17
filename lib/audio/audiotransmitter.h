@@ -8,6 +8,15 @@
 #include "audioprofile.h" // Include your AudioProfile class
 
 #include "../data.h"
+#include "../control.h"
+
+#define DEPLOYED false
+
+#if DEPLOYED
+#include "../audiorx/audioreceiver.h"
+#else
+#include "../../tst/testlib/audioreceiver_test.h"
+#endif
 
 using namespace std;
 

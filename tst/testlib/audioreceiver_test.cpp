@@ -1,10 +1,12 @@
 #include "audioreceiver_test.h"
 
 string received_str;
+std::mt19937 generator(std::random_device{}());
+std::uniform_int_distribution<int> distribution(0, 1);
 
 uint8_t listen(string &result)
 {
-    result = (char)ACK;
+    result = (char)(distribution(generator) ? ACK : NAK_SEND);
     return 0;
 }
 

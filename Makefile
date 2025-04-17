@@ -10,9 +10,10 @@ PA = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
 
 SRC_DIRS := src lib lib/audio tst/testlib
 BUILD_DIRS := $(addprefix $(BUILD)/, $(SRC_DIRS))
-SRC_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
+SRC_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
 
-OBJ := $(patsubst %.cpp,$(BUILD)/%.o,$(SRC_FILES))
+OBJ := $(patsubst %.cpp,$(BUILD)/%.o,$(filter %.cpp, $(SRC_FILES))) \
+       $(patsubst %.c,$(BUILD)/%.o,$(filter %.c,$(SRC_FILES)))
 
 all: program
 
@@ -24,6 +25,9 @@ program: $(OBJ)
 $(OBJ): | $(BUILD_DIRS)
 
 $(BUILD)/%.o: %.cpp
+	$(CC) $(CFLAGS) $(PA) -c $< -o $@
+
+$(BUILD)/%.o: %.c
 	$(CC) $(CFLAGS) $(PA) -c $< -o $@
 
 $(BUILD_DIRS):
@@ -45,7 +49,7 @@ data_test: unity.o $(TST)/data_tests.cpp $(BUILD)/lib/data.o
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
 	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp lib/control.cpp
 
-file_tx_test: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp
+file_tx_test: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp $(BUILD)/lib/control.o $(BUILD)/lib/crc8.o $(BUILD)/tst/testlib/audioreceiver_test.o
 	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA)
 
 run_test: data_test ctrl_test

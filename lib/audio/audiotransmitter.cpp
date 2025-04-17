@@ -176,6 +176,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         cerr << "Error opening file!" << endl;
     }
 
+    string response;
     vector<string> chunks;
     char *frameBuf = new char[FRAME_SIZE_BYTES];
     uint8_t frameNum = 0;
@@ -192,7 +193,18 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     {
         frameBuf = chunks.at(frameNum).data();
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
-        frameNum++;
+
+        listen(response);
+        cout << static_cast<unsigned int>(frameNum) << ": " << response.data();
+        if (isAck(response))
+        {
+            frameNum++;
+            cout << "ACK response" << endl;
+        }
+        else
+        {
+            cout << "NAK response" << endl;
+        }
     }
 
     ifile.close(); // Close the file
