@@ -5,10 +5,10 @@ CFLAGS = -g -Wall -std=c++17
 TST = tst
 BUILD = build
 
-PA = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
-# PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
+# PA = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
+PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
 
-SRC_DIRS := src lib lib/audio tst/testlib
+SRC_DIRS := src lib lib/audio lib/audio/audiorx # tst/testlib
 BUILD_DIRS := $(addprefix $(BUILD)/, $(SRC_DIRS))
 SRC_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
 

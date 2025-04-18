@@ -15,12 +15,17 @@
 #include <unistd.h>
 #include <string.h>
 
-#define DEPLOYED false
+#define DEPLOYED true
+#define LINUX true
 
 #if DEPLOYED
 #include "../lib/audio/audiorx/audioreceiver.h"
 #else
 #include "../tst/testlib/audioreceiver_test.h"
+#endif
+
+#if LINUX
+#include "pa_linux_alsa.h"
 #endif
 
 using namespace std;

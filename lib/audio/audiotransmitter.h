@@ -10,12 +10,17 @@
 #include "../data.h"
 #include "../control.h"
 
-#define DEPLOYED false
+#define DEPLOYED true
+#define LINUX true
 
 #if DEPLOYED
-#include "../audiorx/audioreceiver.h"
+#include "./audiorx/audioreceiver.h"
 #else
 #include "../../tst/testlib/audioreceiver_test.h"
+#endif
+
+#if LINUX
+#include "pa_linux_alsa.h"
 #endif
 
 using namespace std;

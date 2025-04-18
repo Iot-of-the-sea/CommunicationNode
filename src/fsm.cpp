@@ -39,6 +39,7 @@ void IdleState::handle(NodeFSM &fsm)
     if (response == "y")
     {
         audioTx.init_stream();
+        init_receiver();
         if (fsm.getIsROVMode())
         {
             cout << "to stage search" << endl;
@@ -126,7 +127,8 @@ void SendRTSState::handle(NodeFSM &fsm)
 {
     transmit_data(audioTx, CTRL_MODE, RTS);
 
-    listen(response, string(1, static_cast<char>(CTS)));
+    // listen(response, string(1, static_cast<char>(CTS)));
+    listen(response);
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == CTS)
     {
@@ -187,6 +189,7 @@ void SendEOTState::handle(NodeFSM &fsm)
     if (isAck(response))
     {
         audioTx.close_stream();
+        close_receiver();
         cout << "to stage idle" << endl;
         fsm.changeState(std::make_unique<IdleState>());
     }
@@ -258,7 +261,8 @@ void ReadIDState::handle(NodeFSM &fsm)
 
 void ReadRTSState::handle(NodeFSM &fsm)
 {
-    listen(response, string(1, static_cast<char>(RTS)));
+    // listen(response, string(1, static_cast<char>(RTS)));
+    listen(response);
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == RTS)
     {
@@ -292,7 +296,8 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
 void ReadDataStartState::handle(NodeFSM &fsm)
 {
-    listen(response, string(1, static_cast<char>(DATA_START)));
+    // listen(response, string(1, static_cast<char>(DATA_START)));
+    listen(response);
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == DATA_START)
     {
@@ -309,7 +314,8 @@ void ReadDataStartState::handle(NodeFSM &fsm)
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
-    listen(response, string(1, static_cast<char>(DATA_DONE)));
+    // listen(response, string(1, static_cast<char>(DATA_DONE)));
+    listen(response);
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == DATA_DONE)
     {
@@ -384,7 +390,8 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
 
 void ReadEOTState::handle(NodeFSM &fsm)
 {
-    listen(response, string(1, static_cast<char>(EOT)));
+    // listen(response, string(1, static_cast<char>(EOT)));
+    listen(response);
     err = getHeaderByte(response, headerByte);
     if (!err && headerByte == EOT)
     {

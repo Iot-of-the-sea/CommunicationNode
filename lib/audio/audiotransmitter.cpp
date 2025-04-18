@@ -11,40 +11,53 @@ uint8_t AudioTransmitter::init_stream()
         return 1;
     }
 
-    int deviceCount = Pa_GetDeviceCount();
-    if (deviceCount < 0)
-    {
-        std::cerr << "PortAudio error getting device count: " << Pa_GetErrorText(err) << std::endl;
-        Pa_Terminate();
-        return 1;
-    }
+    // int deviceCount = Pa_GetDeviceCount();
+    // if (deviceCount < 0)
+    // {
+    //     std::cerr << "PortAudio error getting device count: " << Pa_GetErrorText(err) << std::endl;
+    //     Pa_Terminate();
+    //     return 1;
+    // }
 
-    std::cout << "Available audio devices:" << std::endl;
-    for (int i = 0; i < deviceCount; ++i)
-    {
-        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
-        std::cout << "  " << i << ": " << deviceInfo->name << " (Input channels: "
-                  << deviceInfo->maxInputChannels << ", Output channels: "
-                  << deviceInfo->maxOutputChannels << ")" << std::endl;
-    }
+    // std::cout << "Available audio devices:" << std::endl;
+    // for (int i = 0; i < deviceCount; ++i)
+    // {
+    //     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
+    //     std::cout << "  " << i << ": " << deviceInfo->name << " (Input channels: "
+    //               << deviceInfo->maxInputChannels << ", Output channels: "
+    //               << deviceInfo->maxOutputChannels << ")" << std::endl;
+    // }
 
-    int selectedDeviceIndex;
-    std::cout << "Enter the index of the desired device: ";
-    std::cin >> selectedDeviceIndex;
+    // int selectedDeviceIndex;
+    // std::cout << "Enter the index of the desired device: ";
+    // std::cin >> selectedDeviceIndex;
 
-    if (selectedDeviceIndex < 0 || selectedDeviceIndex >= deviceCount)
-    {
-        std::cerr << "Invalid device index." << std::endl;
-        Pa_Terminate();
-        return 1;
-    }
+    // if (selectedDeviceIndex < 0 || selectedDeviceIndex >= deviceCount)
+    // {
+    //     std::cerr << "Invalid device index." << std::endl;
+    //     Pa_Terminate();
+    //     return 1;
+    // }
+
+    PaAlsaStreamInfo alsaInfo;
+    PaAlsa_InitializeStreamInfo(&alsaInfo);   // zero‐out and set size/version/hostApiType :contentReference[oaicite:0]{index=0}
+    alsaInfo.size = sizeof(PaAlsaStreamInfo); // struct size
+    alsaInfo.hostApiType = paALSA;            // identify as ALSA
+    alsaInfo.version = 1;                     // must be 1
+    alsaInfo.deviceString = "plughw:2,0";     // your ALSA hw device :contentReference[oaicite:1]{index=1}
 
     PaStreamParameters outputParameters;
-    outputParameters.device = selectedDeviceIndex;
+    outputParameters.device = paUseHostApiSpecificDeviceSpecification;
     outputParameters.channelCount = 1; // Mono output
     outputParameters.sampleFormat = paFloat32;
-    outputParameters.suggestedLatency = Pa_GetDeviceInfo(selectedDeviceIndex)->defaultLowOutputLatency;
-    outputParameters.hostApiSpecificStreamInfo = nullptr;
+    // outputParameters.suggestedLatency = Pa_GetDeviceInfo(selectedDeviceIndex)->defaultLowOutputLatency;
+    outputParameters.suggestedLatency = Pa_GetDeviceInfo( // you can query default latency
+                                            Pa_GetHostApiInfo(
+                                                Pa_HostApiTypeIdToHostApiIndex(paALSA))
+                                                ->defaultOutputDevice)
+                                            ->defaultLowOutputLatency;
+    // outputParameters.hostApiSpecificStreamInfo = nullptr;
+    outputParameters.hostApiSpecificStreamInfo = &alsaInfo; // attach our ALSA hint :contentReference[oaicite:3]{index=3}
 
     err = Pa_OpenStream(&stream, nullptr, &outputParameters, audio.get_sample_rate(), paFramesPerBufferUnspecified, paNoFlag, nullptr, nullptr);
     if (err != paNoError)
