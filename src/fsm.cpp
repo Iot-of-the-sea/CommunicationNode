@@ -6,7 +6,7 @@ using namespace chrono;
 string response;
 uint8_t headerByte, err;
 
-AudioTransmitter audioTx(AudioProfile(1000.0, {240, 488}, 70000));
+AudioTransmitter audioTx(AudioProfile(1000.0, {43000, 47000}, 50000));
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
