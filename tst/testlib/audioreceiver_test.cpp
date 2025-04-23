@@ -1,4 +1,5 @@
 #include "audioreceiver_test.h"
+#include <iostream>
 
 string received_str;
 std::mt19937 generator(std::random_device{}());

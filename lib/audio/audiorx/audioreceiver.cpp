@@ -25,6 +25,7 @@ uint8_t init_receiver()
 
 uint8_t listen(string &result)
 {
+    cout << "listening" << endl;
     samplingThread.join();
     preambleThread.join();
     result = received_str;

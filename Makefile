@@ -1,6 +1,7 @@
-
 CC = g++
-CFLAGS = -g -Wall -std=c++17
+DEBUG_FLAGS = -g -Wall -std=c++17
+RELEASE_FLAGS = -O2 -Wall -std=c++17 -flto
+CFLAGS = $(RELEASE_FLAGS)
 
 TST = tst
 BUILD = build
@@ -9,8 +10,11 @@ BUILD = build
 PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
 
 SRC_DIRS := src lib lib/audio lib/audio/audiorx # tst/testlib
-BUILD_DIRS := $(addprefix $(BUILD)/, $(SRC_DIRS))
-SRC_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
+TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests # tst/testlib
+
+TARGET_DIRS = $(TST_DIRS)
+BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
+SRC_FILES := $(foreach dir,$(TARGET_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
 
 OBJ := $(patsubst %.cpp,$(BUILD)/%.o,$(filter %.cpp, $(SRC_FILES))) \
        $(patsubst %.c,$(BUILD)/%.o,$(filter %.c,$(SRC_FILES)))
@@ -49,7 +53,10 @@ data_test: unity.o $(TST)/data_tests.cpp $(BUILD)/lib/data.o
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
 	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp lib/control.cpp
 
-file_tx_test: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp $(BUILD)/lib/control.o $(BUILD)/lib/crc8.o $(BUILD)/tst/testlib/audioreceiver_test.o
+
+# $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp $(BUILD)/lib/control.o $(BUILD)/lib/crc8.o $(BUILD)/lib/audio/audiorx/audioreceiver.o # $(BUILD)/tst/testlib/audioreceiver_test.o
+	
+file_tx_test: $(OBJ)
 	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA)
 
 run_test: data_test ctrl_test

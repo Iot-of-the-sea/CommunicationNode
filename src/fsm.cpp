@@ -38,6 +38,7 @@ void IdleState::handle(NodeFSM &fsm)
     cin >> response;
     if (response == "y")
     {
+        init_receiver();
         audioTx.init_stream();
         init_receiver();
         if (fsm.getIsROVMode())
@@ -397,6 +398,7 @@ void ReadEOTState::handle(NodeFSM &fsm)
     {
         transmit_data(audioTx, CTRL_MODE, ACK);
         audioTx.close_stream();
+        close_receiver();
         cout << "to stage idle" << endl;
         fsm.changeState(std::make_unique<IdleState>());
     }
