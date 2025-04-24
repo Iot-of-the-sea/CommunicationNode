@@ -67,13 +67,11 @@ static uint8_t demodulationThreadFunc(string &output)
 			if (peakFreq >= 62500 && peakFreq <= 63500)
 			{
 				bitBuffer.push_back('0');
-				// cout << "0" << flush;
 			}
 			// Frequency in [66500, 67500] is interpreted as 1
 			else if (peakFreq >= 66500 && peakFreq <= 67500)
 			{
 				bitBuffer.push_back('1');
-				// cout << "1" << flush;
 			}
 			// Ignore other frequencies (or add logic as needed)
 			// cout << peakFreq << flush;

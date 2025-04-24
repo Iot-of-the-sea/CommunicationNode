@@ -31,7 +31,6 @@ uint8_t listen(string &result)
     result = received_str;
     return 0;
 }
-
 uint8_t close_receiver()
 {
     AudioDevice::close(pcm_handle);

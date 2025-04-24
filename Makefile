@@ -25,7 +25,7 @@ all: program
 debug: debug_program
 
 program: $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o run $(PA)
+	$(CC) $(CFLAGS) $(OBJ) -o run $(PA) -pthread
 
 $(OBJ): | $(BUILD_DIRS)
 
@@ -54,11 +54,9 @@ data_test: unity.o $(TST)/data_tests.cpp $(BUILD)/lib/data.o
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
 	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp lib/control.cpp
 
-
-# $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/lib/audio/audioprofile.o $(BUILD)/lib/data.o $(TST)/file_tx_test.cpp $(BUILD)/lib/control.o $(BUILD)/lib/crc8.o $(BUILD)/lib/audio/audiorx/audioreceiver.o # $(BUILD)/tst/testlib/audioreceiver_test.o
 	
 file_tx_test: $(OBJ)
-	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA)
+	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA) -pthread
 
 file_rx_test: $(OBJ)
 	$(CC) $(CFLAGS) -o $(TST)/file_rx_test $^ $(PA)

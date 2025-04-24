@@ -8,6 +8,7 @@ int main()
     init_receiver();
     cout << "stream initialized" << endl;
     transmit_file(audioTx, "./tst/test.txt");
+    // transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     audioTx.close_stream();
     close_receiver();
 }
