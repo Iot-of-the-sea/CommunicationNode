@@ -11,7 +11,8 @@ void initDemodulation(const vector<float>& postPreambleData);
 void addSamplingData(const vector<float>& newData);
 
 // Start the Demodulation thread (ensure PreambleDetector has already stopped)
-void startDemodulation();
+// void startDemodulation();
+void startDemodulation(string &output);
 
 // Stop the Demodulation thread and clean up resources
 void stopDemodulation();

@@ -11,34 +11,6 @@ uint8_t AudioTransmitter::init_stream()
         return 1;
     }
 
-    // int deviceCount = Pa_GetDeviceCount();
-    // if (deviceCount < 0)
-    // {
-    //     std::cerr << "PortAudio error getting device count: " << Pa_GetErrorText(err) << std::endl;
-    //     Pa_Terminate();
-    //     return 1;
-    // }
-
-    // std::cout << "Available audio devices:" << std::endl;
-    // for (int i = 0; i < deviceCount; ++i)
-    // {
-    //     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
-    //     std::cout << "  " << i << ": " << deviceInfo->name << " (Input channels: "
-    //               << deviceInfo->maxInputChannels << ", Output channels: "
-    //               << deviceInfo->maxOutputChannels << ")" << std::endl;
-    // }
-
-    // int selectedDeviceIndex;
-    // std::cout << "Enter the index of the desired device: ";
-    // std::cin >> selectedDeviceIndex;
-
-    // if (selectedDeviceIndex < 0 || selectedDeviceIndex >= deviceCount)
-    // {
-    //     std::cerr << "Invalid device index." << std::endl;
-    //     Pa_Terminate();
-    //     return 1;
-    // }
-
     PaAlsaStreamInfo alsaInfo;
     PaAlsa_InitializeStreamInfo(&alsaInfo);   // zero‐out and set size/version/hostApiType :contentReference[oaicite:0]{index=0}
     alsaInfo.size = sizeof(PaAlsaStreamInfo); // struct size
@@ -50,13 +22,11 @@ uint8_t AudioTransmitter::init_stream()
     outputParameters.device = paUseHostApiSpecificDeviceSpecification;
     outputParameters.channelCount = 1; // Mono output
     outputParameters.sampleFormat = paFloat32;
-    // outputParameters.suggestedLatency = Pa_GetDeviceInfo(selectedDeviceIndex)->defaultLowOutputLatency;
     outputParameters.suggestedLatency = Pa_GetDeviceInfo( // you can query default latency
                                             Pa_GetHostApiInfo(
                                                 Pa_HostApiTypeIdToHostApiIndex(paALSA))
                                                 ->defaultOutputDevice)
                                             ->defaultLowOutputLatency;
-    // outputParameters.hostApiSpecificStreamInfo = nullptr;
     outputParameters.hostApiSpecificStreamInfo = &alsaInfo; // attach our ALSA hint :contentReference[oaicite:3]{index=3}
 
     err = Pa_OpenStream(&stream, nullptr, &outputParameters, audio.get_sample_rate(), paFramesPerBufferUnspecified, paNoFlag, nullptr, nullptr);
@@ -67,7 +37,6 @@ uint8_t AudioTransmitter::init_stream()
         return 1;
     }
 
-    // Pa_OpenDefaultStream(&stream, 0, 1, paFloat32, audio.get_sample_rate(), paFramesPerBufferUnspecified, nullptr, nullptr);
     Pa_StartStream(stream);
     stream_status = 1;
 
@@ -258,10 +227,11 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     while (frameNum < chunks.size())
     {
         frameBuf = chunks.at(frameNum).data();
+        cout << "transmit: " << (unsigned int)frameNum << endl;
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
 
         listen(response);
-        cout << static_cast<unsigned int>(frameNum) << ": " << response.data();
+        cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
         if (isAck(response))
         {
             frameNum++;
@@ -271,6 +241,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         {
             cout << "NAK response" << endl;
         }
+        usleep(1000); // TODO: remove
     }
 
     ifile.close(); // Close the file

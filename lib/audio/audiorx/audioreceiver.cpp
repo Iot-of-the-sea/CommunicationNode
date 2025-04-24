@@ -17,17 +17,17 @@ uint8_t init_receiver()
         return -1;
     }
 
-    samplingThread = thread(samplingThreadFunc, pcm_handle);
-    preambleThread = thread(run, std::ref(received_str));
-
     return 0;
 }
 
 uint8_t listen(string &result)
 {
-    cout << "listening" << endl;
+    samplingThread = thread(samplingThreadFunc, pcm_handle);
+    preambleThread = thread(run, std::ref(received_str));
     samplingThread.join();
     preambleThread.join();
+
+    stopDemodulation();
     result = received_str;
     return 0;
 }

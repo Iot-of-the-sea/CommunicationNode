@@ -10,7 +10,7 @@
 
 using namespace std;
 
-uint8_t isAck(string &header);
+uint8_t isAck(string &packet);
 
 uint8_t isAck(uint8_t header);
 

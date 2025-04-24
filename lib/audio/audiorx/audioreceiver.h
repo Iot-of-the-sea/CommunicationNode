@@ -4,6 +4,7 @@
 #include "AudioDevice.h"
 #include "Sampling.h"
 #include "PreambleDetector.h"
+#include "Demodulation.h"
 #include <thread>
 #include <atomic>
 
