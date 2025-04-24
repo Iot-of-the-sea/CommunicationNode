@@ -17,21 +17,21 @@ uint8_t init_receiver()
         return -1;
     }
 
-    samplingThread = thread(samplingThreadFunc, pcm_handle);
-    preambleThread = thread(run, std::ref(received_str));
-
     return 0;
 }
 
 uint8_t listen(string &result)
 {
+    samplingThread = thread(samplingThreadFunc, pcm_handle);
+    preambleThread = thread(run, std::ref(received_str));
     cout << "listening" << endl;
     samplingThread.join();
     preambleThread.join();
+
+    stopDemodulation();
     result = received_str;
     return 0;
 }
-
 uint8_t close_receiver()
 {
     AudioDevice::close(pcm_handle);

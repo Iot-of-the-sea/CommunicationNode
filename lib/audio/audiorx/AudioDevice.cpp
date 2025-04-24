@@ -2,7 +2,7 @@
 #include <iostream>
 
 constexpr int SAMPLE_RATE = 192000;
-constexpr int CHANNEL_COUNT = 8;
+constexpr int CHANNEL_COUNT = 2;
 constexpr const char *DEVICE_NAME = "hw:2,0";
 
 bool AudioDevice::init(snd_pcm_t *&pcm_handle)

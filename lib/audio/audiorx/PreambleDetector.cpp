@@ -19,8 +19,7 @@ vector<float> generateBFSKPreambleTemplate()
 
     for (char bit : preambleBits)
     {
-        // double frequency = (bit == '1') ? 67000.0 : 63000.0;
-        double frequency = (bit == '1') ? 47000.0 : 43000.0;
+        double frequency = (bit == '1') ? 67000.0 : 63000.0;
         // double frequency = (bit == '1') ? 9000.0 : 7000.0;
         auto wave = generateSineWave(frequency, BUFFER_SIZE);
         bfskWave.insert(bfskWave.end(), wave.begin(), wave.end());
@@ -56,7 +55,7 @@ void updateBuffer(const vector<float> &newData)
     cond.notify_one(); // Wake up the run()
 }
 
-void run()
+void run(string &output)
 {
     preambleTemplate = generateBFSKPreambleTemplate();
 
@@ -104,7 +103,8 @@ void run()
 
                     // Initialize Demodulation module and start demodulation thread
                     initDemodulation(postPreambleData);
-                    startDemodulation();
+                    // startDemodulation();
+                    startDemodulation(output);
                     std::cout << "Preamble detection exit!" << std::endl;
                     return;
                 }
@@ -133,34 +133,30 @@ void run()
 }
 
 // Detect the preamble: once found, extract data after the preamble, initialize the Demodulation module, and start demodulation thread
-void detectPreamble()
-{
-    size_t bestPosition_old = 0;
-    float maxCorrelation_old = 0.0f;
-    if (crossCorrelation(buffer, preambleTemplate, bestPosition_old, maxCorrelation_old))
-    {
-        // Extract data following the preamble from buffer
-        size_t postIndex = bestPosition_old + preambleTemplate.size();
-        std::vector<float> postPreambleData;
-        if (postIndex < buffer.size())
-        {
-            postPreambleData.assign(buffer.begin() + postIndex, buffer.end());
-        }
-        std::cout << "[PreambleDetector] Preamble detected!" << std::endl;
+// void detectPreamble() {
+//     size_t bestPosition_old = 0;
+//     float maxCorrelation_old = 0.0f;
+//     if (crossCorrelation(buffer, preambleTemplate, bestPosition_old, maxCorrelation_old)) {
+//         // Extract data following the preamble from buffer
+//         size_t postIndex = bestPosition_old + preambleTemplate.size();
+//         std::vector<float> postPreambleData;
+//         if (postIndex < buffer.size()) {
+//             postPreambleData.assign(buffer.begin() + postIndex, buffer.end());
+//         }
+//         std::cout << "[PreambleDetector] Preamble detected!" << std::endl;
 
-        // Initialize Demodulation module with post-preamble data and start demodulation thread
-        initDemodulation(postPreambleData);
-        startDemodulation();
+//         // Initialize Demodulation module with post-preamble data and start demodulation thread
+//         initDemodulation(postPreambleData);
+//         startDemodulation();
 
-        // Exit the detection thread. In real applications, use a flag instead of exiting directly.
-        return;
-    }
-}
+//         // Exit the detection thread. In real applications, use a flag instead of exiting directly.
+//         return;
+//     }
+// }
 
 // Compute cross-correlation to detect the preamble and return the best matching position
 bool crossCorrelation(const std::vector<float> &data, const std::vector<float> &templateData, size_t &bestPosition, float &maxCorrelation)
 {
-    std::cout << "Maximum correlation value: " << data.at(0) << std::endl;
     const size_t maxLag = data.size() - templateData.size();
     vector<float> correlationValues(maxLag + 1, 0.0f);
 

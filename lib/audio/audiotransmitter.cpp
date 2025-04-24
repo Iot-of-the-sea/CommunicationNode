@@ -258,10 +258,11 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     while (frameNum < chunks.size())
     {
         frameBuf = chunks.at(frameNum).data();
+        cout << "transmit: " << (unsigned int)frameNum << endl;
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
 
         listen(response);
-        cout << static_cast<unsigned int>(frameNum) << ": " << response.data();
+        cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
         if (isAck(response))
         {
             frameNum++;
@@ -271,6 +272,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         {
             cout << "NAK response" << endl;
         }
+        usleep(1000); // TODO: remove
     }
 
     ifile.close(); // Close the file
