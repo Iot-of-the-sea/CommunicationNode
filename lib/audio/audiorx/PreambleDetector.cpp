@@ -55,7 +55,7 @@ void updateBuffer(const vector<float> &newData)
     cond.notify_one(); // Wake up the run()
 }
 
-void run(string &output)
+void run(string &output, TimeoutHandler *timeout)
 {
     preambleTemplate = generateBFSKPreambleTemplate();
 
@@ -64,11 +64,21 @@ void run(string &output)
     size_t bestPosition_old = 0;
     float maxCorrelation_old = 0.0f;
 
+    if (timeout)
+        timeout->start();
+
     while (true)
     {
         {
             unique_lock<mutex> lock(mutex_preamble);
             cond.wait(lock);
+        }
+
+        if (timeout && timeout->checkTimeout() == TIMEOUT_ERROR)
+        {
+            stopSampling();
+            cout << "Preamble detection timed out" << endl; // TODO: remove after debugging
+            return;
         }
 
         // Each time new data arrives, compute cross-correlation
@@ -91,7 +101,7 @@ void run(string &output)
                 // (new maxCorrelation == old maxCorrelation) AND (new bestPosition == old bestPosition - 192)
                 if (maxCorrelation_new == maxCorrelation_old && bestPosition_new == bestPosition_old - 192)
                 {
-                    std::cout << "[PreambleDetector] Preamble detected!" << std::endl;
+                    // std::cout << "[PreambleDetector] Preamble detected!" << std::endl;
                     size_t postIndex = bestPosition_new + preambleTemplate.size();
 
                     // Extract data following the preamble
@@ -105,7 +115,7 @@ void run(string &output)
                     initDemodulation(postPreambleData);
                     // startDemodulation();
                     startDemodulation(output);
-                    std::cout << "Preamble detection exit!" << std::endl;
+                    // std::cout << "Preamble detection exit!" << std::endl;
                     return;
                 }
                 else
@@ -126,7 +136,7 @@ void run(string &output)
 
         if (isDemodulationActive())
         {
-            std::cout << "Preamble detection exit!" << std::endl;
+            // std::cout << "Preamble detection exit!" << std::endl;
             return;
         }
     }
@@ -203,8 +213,8 @@ bool crossCorrelation(const std::vector<float> &data, const std::vector<float> &
 
     if (detectionSuccessful)
     {
-        std::cout << "Most likely starting position: " << bestPosition << std::endl;
-        std::cout << "Maximum correlation value: " << maxCorrelation << std::endl;
+        // std::cout << "Most likely starting position: " << bestPosition << std::endl;
+        // std::cout << "Maximum correlation value: " << maxCorrelation << std::endl;
     }
 
     return detectionSuccessful;

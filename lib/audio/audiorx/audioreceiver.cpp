@@ -22,14 +22,25 @@ uint8_t init_receiver()
 
 uint8_t listen(string &result)
 {
+    TimeoutHandler *nullTimeout = nullptr;
+    return listen(result, nullTimeout);
+}
+
+uint8_t listen(string &result, TimeoutHandler *timeout)
+{
     samplingThread = thread(samplingThreadFunc, pcm_handle);
-    preambleThread = thread(run, std::ref(received_str));
+    preambleThread = thread(run, std::ref(received_str), timeout);
     samplingThread.join();
     preambleThread.join();
 
     stopDemodulation();
     result = received_str;
-    return 0;
+
+    if (timeout->getTriggered()) // TODO: add function to get and clear in one
+    {
+        return TIMEOUT_ERROR;
+    }
+    return NO_ERROR;
 }
 uint8_t close_receiver()
 {

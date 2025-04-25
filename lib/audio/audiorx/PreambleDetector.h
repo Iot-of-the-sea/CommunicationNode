@@ -2,6 +2,9 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
+
+#include "../../timeout/timeout.h"
+#include "Sampling.h"
 using namespace std;
 
 constexpr int BUFFER_SIZE = 192;    // Length of each bit (in samples)
@@ -11,7 +14,7 @@ constexpr int16_t AMPLITUDE = 32767;
 constexpr float DETECTION_THRESHOLD = 0.85f; // Empirical threshold - correlation above this indicates detection
 
 // void run();
-void run(string &output);
+void run(string &output, TimeoutHandler *timeout);
 void updateBuffer(const vector<float> &newData);
 void detectPreamble();
 vector<float> generateBFSKPreambleTemplate();
