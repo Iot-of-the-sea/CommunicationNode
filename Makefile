@@ -13,7 +13,7 @@ SRC_DIRS := src lib lib/audio lib/audio/audiorx # tst/testlib
 TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests # tst/testlib
 RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests # tst/testlib
 
-TARGET_DIRS = $(RX_TST_DIRS)
+TARGET_DIRS = $(TX_TST_DIRS)
 BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
 SRC_FILES := $(foreach dir,$(TARGET_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
 
@@ -54,12 +54,17 @@ data_test: unity.o $(TST)/data_tests.cpp $(BUILD)/lib/data.o
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
 	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp lib/control.cpp
 
-	
-file_tx_test: $(OBJ)
-	$(CC) $(CFLAGS) -o $(TST)/file_tx_test $^ $(PA) -pthread
+# file_tx_test: TARGET_DIRS := $(TX_TST_DIRS)
+# file_rx_test: TARGET_DIRS := $(RX_TST_DIRS)
 
-file_rx_test: $(OBJ)
-	$(CC) $(CFLAGS) -o $(TST)/file_rx_test $^ $(PA)
+file_tx_test file_rx_test: $(OBJ)
+	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
+
+# file_tx_test: $(OBJ)
+# 	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
+
+# file_rx_test: $(OBJ)
+# 	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
 
 run_test: data_test ctrl_test
 	$(TST)/data_tests

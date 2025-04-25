@@ -8,9 +8,9 @@ uint8_t err;
 
 int main()
 {
+    cout << "running file Rx tests" << endl;
     audioTx.init_stream();
     init_receiver();
-    // cout << "stream initialized" << endl;
     while (headerByte != DATA_DONE)
     {
         err = listen(result);

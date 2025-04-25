@@ -241,7 +241,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         {
             cout << "NAK response" << endl;
         }
-        usleep(1000); // TODO: remove
+        usleep(5000); // TODO: remove
     }
 
     ifile.close(); // Close the file
