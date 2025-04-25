@@ -4,6 +4,7 @@ uint8_t TimeoutHandler::start()
 {
     _start_time = chrono::steady_clock::now();
     _state = ACTIVE;
+    clearTriggered();
     return NO_ERROR;
 }
 
@@ -25,6 +26,7 @@ uint8_t TimeoutHandler::checkTimeout()
         if (elapsed >= _duration_us)
         {
             _state = IDLE;
+            _triggered = true;
             return TIMEOUT_ERROR;
         }
     }
