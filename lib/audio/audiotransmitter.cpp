@@ -215,6 +215,9 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     vector<string> chunks;
     char *frameBuf = new char[FRAME_SIZE_BYTES];
     uint8_t frameNum = 0;
+    uint8_t err;
+
+    TimeoutHandler timeout(1000000);
 
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
@@ -230,10 +233,10 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         cout << "transmit: " << (unsigned int)frameNum << endl;
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
 
-        listen(response);
-        cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
-        if (isAck(response))
+        err = listen(response, &timeout);
+        if (!err && isAck(response))
         {
+            cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
             frameNum++;
             cout << "ACK response" << endl;
         }
@@ -241,7 +244,6 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         {
             cout << "NAK response" << endl;
         }
-        usleep(5000); // TODO: remove
     }
 
     ifile.close(); // Close the file

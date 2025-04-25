@@ -1,6 +1,7 @@
 #include "../../lib/audio/audiotransmitter.h"
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
+TimeoutHandler timeout(5000000);
 
 int main()
 {
@@ -9,6 +10,13 @@ int main()
     init_receiver();
     transmit_file(audioTx, "./tst/test.txt");
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    string result;
+    uint8_t err = listen(result, &timeout);
+    if (err)
+    {
+        transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+        err = listen(result, &timeout);
+    }
     audioTx.close_stream();
     close_receiver();
 }
