@@ -5,8 +5,11 @@
 #include <random>
 #include <bitset>
 
+// TODO: move errors to another file?
 #define NO_ERROR 0x00
 #define EMPTY_PACKET_ERROR 0x01
+#define STATE_ERROR 0x02
+#define TIMEOUT_ERROR 0x03
 
 using namespace std;
 

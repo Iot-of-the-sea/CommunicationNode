@@ -54,6 +54,9 @@ data_test: unity.o $(TST)/data_tests.cpp $(BUILD)/lib/data.o
 ctrl_test: unity.o $(TST)/ctrl_tests.cpp
 	$(CC) $(CFLAGS) -o $(TST)/ctrl_tests $(BUILD)/unity.o $(TST)/ctrl_tests.cpp lib/control.cpp
 
+timeout_test: unity.o $(TST)/timeout_tests.cpp
+	$(CC) $(CFLAGS) -o $(TST)/timeout_tests $(BUILD)/unity.o $(TST)/timeout_tests.cpp lib/timeout/timeout.cpp
+
 # file_tx_test: TARGET_DIRS := $(TX_TST_DIRS)
 # file_rx_test: TARGET_DIRS := $(RX_TST_DIRS)
 
@@ -66,9 +69,10 @@ file_tx_test file_rx_test: $(OBJ)
 # file_rx_test: $(OBJ)
 # 	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
 
-run_test: data_test ctrl_test
+run_test: data_test ctrl_test timeout_test
 	$(TST)/data_tests
 	$(TST)/ctrl_tests
+	$(TST)/timeout_tests
 
 clean:
 	rm -rf build/
