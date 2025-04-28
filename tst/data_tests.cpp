@@ -1,8 +1,28 @@
 #include "./unity/unity.h"
 #include "../lib/data.h"
 
-void setUp() {}    // Runs before each test
-void tearDown() {} // Runs after each test
+#define TEST_FILE_NAME "./tst/testFile.txt"
+
+bool checkFileMatch(string fileName, string expectedStr)
+{
+    ifstream ifile(fileName, ifstream::binary); // Open the file
+    if (!ifile)
+    {
+        cerr << "Error opening file!" << endl;
+    }
+
+    char *actualBuf = new char[expectedStr.length() * 2];
+
+    ifile.read(actualBuf, expectedStr.length() * 2);
+    ifile.close();
+    return string(actualBuf) == expectedStr;
+}
+
+void setUp() {} // Runs before each test
+void tearDown()
+{
+    // remove(TEST_FILE_NAME);
+} // Runs after each test
 
 void packFrame_shouldPopulateSignal_fromEmpty()
 {
@@ -228,6 +248,160 @@ void packetFromFrame_givenValidCtrlFrame_shouldMakeValidPacket()
     TEST_ASSERT_EQUAL(0xac, packet.back());
 }
 
+void initFileWriter_givenDefault_noError()
+{
+    FileWriter testWriter;
+    TEST_ASSERT_EQUAL(0, testWriter.getFileName().length());
+}
+
+void initFileWriter_givenString_noError()
+{
+    FileWriter testWriter(string("testFile.txt"));
+    TEST_ASSERT_EQUAL(12, testWriter.getFileName().length());
+    TEST_ASSERT_EQUAL_CHAR_ARRAY("testFile.txt", testWriter.getFileName().c_str(), 12);
+}
+
+void initFileWriter_givenCharArr_noError()
+{
+    FileWriter testWriter("testFile.txt");
+    TEST_ASSERT_EQUAL(12, testWriter.getFileName().length());
+    TEST_ASSERT_EQUAL_CHAR_ARRAY("testFile.txt", testWriter.getFileName().c_str(), 12);
+}
+
+void initFileWriter_givenEmptyString_doesNotAssign()
+{
+    FileWriter testWriter(string(""));
+    TEST_ASSERT_EQUAL(0, testWriter.getFileName().length());
+    ;
+}
+
+void initFileWriter_givenEmptyCharArr_doesNotAssign()
+{
+    FileWriter testWriter("");
+    TEST_ASSERT_EQUAL(0, testWriter.getFileName().length());
+}
+
+void open_and_close_noError()
+{
+    FileWriter testWriter("testFile.txt");
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+}
+
+void open_givenNoFileName_returnsArgumentError()
+{
+    FileWriter testWriter;
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(ARGUMENT_ERROR, err);
+}
+
+void close_givenNoFileName_returnsNoError()
+{
+    FileWriter testWriter;
+    uint8_t err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+}
+
+void doubleOpen_givenValidFileName_returnsNoError()
+{
+    FileWriter testWriter(TEST_FILE_NAME);
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+}
+
+void write_givenCharArr_and_noStream_returnsIOError()
+{
+    FileWriter testWriter;
+    char *testData = "abc";
+    uint8_t err = testWriter.write(testData);
+    TEST_ASSERT_EQUAL(IO_ERROR, err);
+}
+
+void write_givenCharArr_and_openStream_returnsNoError()
+{
+
+    FileWriter testWriter(TEST_FILE_NAME);
+    char *testData = "abc";
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.write(testData);
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    TEST_ASSERT_TRUE(checkFileMatch(TEST_FILE_NAME, "abc"));
+
+    TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
+}
+
+void write_givenMultipleCharArr_and_openStream_returnsNoError()
+{
+
+    FileWriter testWriter(TEST_FILE_NAME);
+    char *testData = "abc";
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.write(testData);
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    testData = "123";
+    err = testWriter.write(testData);
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    TEST_ASSERT_TRUE(checkFileMatch(TEST_FILE_NAME, "abc123"));
+
+    TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
+}
+
+void write_givenString_and_openStream_returnsNoError()
+{
+
+    FileWriter testWriter(TEST_FILE_NAME);
+    string testData = "string abc";
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.write(testData);
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    TEST_ASSERT_TRUE(checkFileMatch(TEST_FILE_NAME, "string abc"));
+
+    TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
+}
+
+void write_uint8Arr_and_openStream_returnsNoError()
+{
+
+    FileWriter testWriter(TEST_FILE_NAME);
+    uint8_t testData[9] = {0X75, 0X69, 0X6E, 0X74, 0X38, 0X20, 0X61, 0X62, 0X63};
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.write(testData, 9);
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    TEST_ASSERT_TRUE(checkFileMatch(TEST_FILE_NAME, "uint8 abc"));
+
+    TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
+}
+
 int main()
 {
     UNITY_BEGIN();
@@ -251,6 +425,21 @@ int main()
 
     RUN_TEST(packetFromFrame_givenValidDataFrame_shouldMakeValidPacket);
     RUN_TEST(packetFromFrame_givenValidCtrlFrame_shouldMakeValidPacket);
+
+    RUN_TEST(initFileWriter_givenDefault_noError);
+    RUN_TEST(initFileWriter_givenString_noError);
+    RUN_TEST(initFileWriter_givenCharArr_noError);
+    RUN_TEST(initFileWriter_givenEmptyString_doesNotAssign);
+    RUN_TEST(initFileWriter_givenEmptyCharArr_doesNotAssign);
+    RUN_TEST(open_and_close_noError);
+    RUN_TEST(doubleOpen_givenValidFileName_returnsNoError);
+    RUN_TEST(open_givenNoFileName_returnsArgumentError);
+    RUN_TEST(close_givenNoFileName_returnsNoError);
+    RUN_TEST(write_givenCharArr_and_noStream_returnsIOError);
+    RUN_TEST(write_givenCharArr_and_openStream_returnsNoError);
+    RUN_TEST(write_givenMultipleCharArr_and_openStream_returnsNoError);
+    RUN_TEST(write_givenString_and_openStream_returnsNoError);
+    RUN_TEST(write_uint8Arr_and_openStream_returnsNoError);
 
     return UNITY_END();
 }

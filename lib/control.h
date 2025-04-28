@@ -10,6 +10,8 @@
 #define EMPTY_PACKET_ERROR 0x01
 #define STATE_ERROR 0x02
 #define TIMEOUT_ERROR 0x03
+#define IO_ERROR 0x04
+#define ARGUMENT_ERROR 0x05
 
 using namespace std;
 

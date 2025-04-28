@@ -96,3 +96,86 @@ uint8_t check_received_crc(string packet)
 
     return actual == expected;
 }
+
+FileWriter::FileWriter(string fileName)
+{
+    if (fileName.length() < 1)
+    {
+        cerr << "Error: Failed to open file. Invalid file name." << endl;
+        return;
+    }
+
+    _fileName = fileName;
+}
+
+FileWriter::FileWriter(const char *fileName)
+{
+    if (strlen(fileName) < 1)
+    {
+        cerr << "Error: Failed to open file. Invalid file name." << endl;
+        return;
+    }
+
+    _fileName = string(fileName);
+}
+
+uint8_t FileWriter::open()
+{
+    if (_fileName.empty())
+    {
+        cerr << "Error: File name not given." << endl;
+        return ARGUMENT_ERROR;
+    }
+
+    if (!_writeStream.is_open())
+    {
+        // append and binary mode
+        _writeStream = ofstream(_fileName, std::ios::app | ios::binary);
+        if (!_writeStream)
+        {
+            cerr << "Error: Cannot open file for writing!" << endl;
+            return IO_ERROR;
+        }
+    }
+
+    return NO_ERROR;
+}
+
+uint8_t FileWriter::close()
+{
+    _writeStream.close(); // Close the file
+    if (_writeStream.is_open())
+    {
+        cerr << "Failed to close file." << endl;
+        return IO_ERROR;
+    }
+
+    return NO_ERROR;
+}
+
+uint8_t FileWriter::write(char *data, uint32_t length)
+{
+    if (!_writeStream.is_open())
+    {
+        cerr << "Error: File not opened for writing." << endl;
+        return IO_ERROR;
+    }
+
+    _writeStream.write(data, length); // Write header
+    return NO_ERROR;
+}
+
+uint8_t FileWriter::write(char *data)
+{
+    return write(data, strlen(data));
+}
+
+uint8_t FileWriter::write(string data)
+{
+    return write(data.data(), data.length());
+}
+
+uint8_t FileWriter::write(uint8_t *data, uint32_t length)
+{
+    return write(reinterpret_cast<char *>(data), length);
+}

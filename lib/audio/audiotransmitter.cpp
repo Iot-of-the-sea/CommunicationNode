@@ -223,6 +223,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
     {
         chunks.push_back(string(frameBuf, FRAME_SIZE_BYTES));
+        delete frameBuf; // TODO: check this
         frameBuf = new char[FRAME_SIZE_BYTES];
     }
     chunks.push_back(string(frameBuf, FRAME_SIZE_BYTES));
@@ -246,7 +247,8 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         }
     }
 
-    ifile.close(); // Close the file
+    ifile.close();   // Close the file
+    delete frameBuf; // TODO: check this
 
     return 0;
 }
