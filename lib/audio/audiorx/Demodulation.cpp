@@ -20,8 +20,10 @@ void initDemodulation(const vector<float> &postPreambleData)
 {
 	lock_guard<mutex> lock(demodMutex);
 	demodBuffer = postPreambleData;
+#if !DEPLOYED
 	cout << "Demodulation buffer initialized with " << demodBuffer.size() << " float samples." << endl;
 	cout << "PreambleDetector thread closed." << endl;
+#endif
 }
 
 // Add new data from the Sampling module (192 samples each time)
@@ -89,11 +91,13 @@ static uint8_t demodulationThreadFunc(string &output)
 
 	output = result;
 
+#if !DEPLOYED
 	cout << endl
 		 << endl
 		 << "Received message: " << endl
 		 << result << endl
 		 << endl;
+#endif
 
 	stopSampling();
 	return 0;
@@ -103,10 +107,14 @@ static uint8_t demodulationThreadFunc(string &output)
 // Start the demodulation thread, ensuring the PreambleDetector has already stopped
 void startDemodulation(string &output)
 {
+#if !DEPLOYED
 	cout << "Starting Demodulation thread..." << endl;
+#endif
 	demodRunning = true;
 	demodThread = thread(demodulationThreadFunc, std::ref(output));
+#if !DEPLOYED
 	cout << "Demodulation thread started." << endl;
+#endif
 }
 
 // Stop the demodulation thread and clean up resources

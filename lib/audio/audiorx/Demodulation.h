@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../config.h"
 #include <vector>
 #include "fft.h"
 using namespace std;

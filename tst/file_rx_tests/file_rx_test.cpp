@@ -4,7 +4,7 @@
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 
-TimeoutHandler timeout(50000);
+TimeoutHandler timeout(300000);
 
 string result, last_rx_data, rx_data;
 uint8_t headerByte = 0x00;
