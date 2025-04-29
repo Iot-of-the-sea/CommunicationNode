@@ -1,12 +1,10 @@
 #ifndef __FILE_TRANSFER__
 #define __FILE_TRANSFER__
 
+#include "../config.h"
 #include <stdint.h>
 #include "../audio/audiotransmitter.h"
 #include "../audio/audiorx/audioreceiver.h"
-
-#define DEPLOYED true
-#define PARAMETER_TESTING true
 
 #if DEPLOYED
 #include "../audio/audiorx/audioreceiver.h"

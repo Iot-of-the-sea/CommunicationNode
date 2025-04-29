@@ -2,6 +2,8 @@
 #ifndef __FSM__
 #define __FSM__
 
+#include "../lib/config.h"
+
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -14,9 +16,6 @@
 #include <fstream>
 #include <unistd.h>
 #include <string.h>
-
-#define DEPLOYED true
-#define LINUX true
 
 #if DEPLOYED
 #include "../lib/audio/audiorx/audioreceiver.h"

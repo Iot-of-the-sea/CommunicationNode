@@ -2,6 +2,7 @@
 #ifndef __AUDIO_TX__
 #define __AUDIO_TX__
 
+#include "../config.h"
 #include <iostream>
 #include <vector>
 #include <portaudio.h>
@@ -10,8 +11,6 @@
 
 #include "../data.h"
 #include "../control.h"
-
-#define LINUX true
 
 #if LINUX
 #include "pa_linux_alsa.h"
