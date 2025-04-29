@@ -1,15 +1,22 @@
 #include "../../lib/file_transfer/file_transfer.h"
+#include <chrono>
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
-TimeoutHandler timeout(500000);
+TimeoutHandler timeout(50000);
+
+TxTestData txTestData;
 
 int main()
 {
     cout << "running file Tx tests" << endl;
     audioTx.init_stream();
     init_receiver();
-    transmit_file(audioTx, "./tst/test.txt");
+
+    chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
+    transmit_file_test(audioTx, "./tst/test.txt", timeout, &txTestData);
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
+
     string result;
     uint8_t err = listen(result, &timeout);
     if (err)
@@ -19,6 +26,15 @@ int main()
     }
     audioTx.close_stream();
     close_receiver();
+
+    cout << "---------- RESULTS ----------" << endl;
+    cout << "Elapsed Time       : "
+         << chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()
+         << " ms" << endl;
+    cout << "Total Packets Sent : " << txTestData.sent << endl;
+    cout << "ACKs Received      : " << txTestData.ack << endl;
+    cout << "NAKs Recevied      : " << txTestData.nak << endl;
+    cout << "Timeouts           : " << txTestData.timeouts << endl;
 }
 
 // Main function to run the example
