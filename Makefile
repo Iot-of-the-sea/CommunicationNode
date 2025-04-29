@@ -13,7 +13,7 @@ SRC_DIRS := src lib lib/audio lib/audio/audiorx # tst/testlib
 TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer lib/gpio # tst/testlib
 RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer lib/gpio # tst/testlib
 
-TARGET_DIRS = $(RX_TST_DIRS)
+TARGET_DIRS = $(TX_TST_DIRS)
 BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
 SRC_FILES := $(foreach dir,$(TARGET_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
 
@@ -64,7 +64,7 @@ timeout_test: unity.o $(TST)/timeout_tests.cpp
 # file_rx_test: TARGET_DIRS := $(RX_TST_DIRS)
 
 file_tx_test file_rx_test: $(OBJ)
-	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
+	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread -lgpiod
 
 # file_tx_test: $(OBJ)
 # 	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
