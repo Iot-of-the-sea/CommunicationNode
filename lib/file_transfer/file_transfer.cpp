@@ -183,7 +183,8 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
     FileWriter file("./tst/testFile.txt");
     file.open();
-    while (headerByte != DATA_DONE && counter < maxTries)
+    // while (headerByte != DATA_DONE && counter < maxTries)
+    while (headerByte != DATA_DONE)
     {
         set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
@@ -210,14 +211,14 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
             last_rx_data = rx_data;
             lastHeader = headerByte;
-            set_gpio_mode(TX_MODE);
-            transmit_data(tx, CTRL_MODE, ACK);
+            // set_gpio_mode(TX_MODE);
+            // transmit_data(tx, CTRL_MODE, ACK);
             counter = 0;
         }
         else
         {
-            set_gpio_mode(TX_MODE);
-            transmit_data(tx, CTRL_MODE, NAK_SEND);
+            // set_gpio_mode(TX_MODE);
+            // transmit_data(tx, CTRL_MODE, NAK_SEND);
             counter++;
         }
     }

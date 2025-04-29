@@ -20,13 +20,13 @@ uint8_t init_gpio()
     return NO_ERROR;
 }
 
-uint8_t close_gpio()
+uint8_t close_gpio() // italain brainrot // water bucket
 {
     gpiod_chip_close(chip);
     return NO_ERROR;
 }
 
-uint8_t init_pins(const char *mode = "toggle")
+uint8_t init_pins(const char *mode)
 {
     if (!chip)
         cerr << "Error: GPIO chip not initialized." << endl;

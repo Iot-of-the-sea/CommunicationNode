@@ -64,7 +64,7 @@ timeout_test: unity.o $(TST)/timeout_tests.cpp
 # file_rx_test: TARGET_DIRS := $(RX_TST_DIRS)
 
 file_tx_test file_rx_test: $(OBJ)
-	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
+	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread -lgpiod
 
 # file_tx_test: $(OBJ)
 # 	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
