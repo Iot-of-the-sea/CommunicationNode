@@ -11,14 +11,7 @@
 #include "../data.h"
 #include "../control.h"
 
-#define DEPLOYED true
 #define LINUX true
-
-#if DEPLOYED
-#include "./audiorx/audioreceiver.h"
-#else
-#include "../../tst/testlib/audioreceiver_test.h"
-#endif
 
 #if LINUX
 #include "pa_linux_alsa.h"
@@ -67,7 +60,5 @@ public:
 uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header);
 
 uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n, uint16_t len);
-
-uint8_t transmit_file(AudioTransmitter &tx, const char *file);
 
 #endif // __AUDIO_TX__
