@@ -175,6 +175,7 @@ uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header)
     frame tx_frame = {
         .mode = mode,
         .header = header,
+        .data_len = 0,
         .data = {0}};
 
     vector<uint8_t> packet;
@@ -185,22 +186,23 @@ uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header)
 }
 
 // TODO: simplify these two functions
-uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n)
+uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n, uint16_t len)
 {
     uint8_t err;
 
     frame tx_frame = {
         .mode = mode,
         .header = header,
+        .data_len = len,
         .data = {0}};
 
-    memcpy(tx_frame.data, data_n, FRAME_SIZE_BYTES);
-    vector<uint8_t> packet;
+    memcpy(tx_frame.data, data_n, len);
 
+    vector<uint8_t> packet;
     err = packetFromFrame(packet, tx_frame);
+
     tx.play_sequence(packet, true);
     return err;
-    return 0;
 }
 
 uint8_t transmit_file(AudioTransmitter &tx, const char *file)
@@ -213,26 +215,29 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
 
     string response;
     vector<string> chunks;
-    char *frameBuf = new char[FRAME_SIZE_BYTES];
+    char *frameBuf = new char[FRAME_SIZE_BYTES]; // change to nonallocated
     uint8_t frameNum = 0;
     uint8_t err;
 
-    TimeoutHandler timeout(1000000);
+    TimeoutHandler timeout(100000);
 
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
     {
         chunks.push_back(string(frameBuf, FRAME_SIZE_BYTES));
-        delete frameBuf; // TODO: check this
-        frameBuf = new char[FRAME_SIZE_BYTES];
+        memset(frameBuf, 0, sizeof(frameBuf));
     }
-    chunks.push_back(string(frameBuf, FRAME_SIZE_BYTES));
+    chunks.push_back(string(frameBuf));
 
+    string chunkStr;
+    uint16_t chunkLen;
     while (frameNum < chunks.size())
     {
-        frameBuf = chunks.at(frameNum).data();
+        chunkStr = chunks.at(frameNum);
+        chunkLen = chunkStr.length();
+        memcpy(frameBuf, chunkStr.data(), chunkLen);
         cout << "transmit: " << (unsigned int)frameNum << endl;
-        transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf));
+        transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
 
         err = listen(response, &timeout);
         if (!err && isAck(response))
@@ -247,8 +252,8 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
         }
     }
 
-    ifile.close();   // Close the file
-    delete frameBuf; // TODO: check this
+    ifile.close();     // Close the file
+    delete[] frameBuf; // TODO: check this
 
     return 0;
 }

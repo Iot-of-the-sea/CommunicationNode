@@ -21,10 +21,12 @@
 #define DATA_DONE (uint8_t)(0b0110011)
 #define EOT (uint8_t)(0b1100011)
 
+// TODO: make class instead of struct
 typedef struct
 {
     uint8_t mode;
     uint8_t header;
+    uint16_t data_len;
     uint8_t data[FRAME_SIZE_BYTES];
 } frame;
 

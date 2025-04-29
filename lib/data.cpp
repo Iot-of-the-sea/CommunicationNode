@@ -22,8 +22,8 @@ uint8_t packFrame(vector<uint8_t> &signal, frame &frame)
         signal.resize(1);
     else
     {
-        signal.resize(33);
-        for (size_t byte = 0; byte < 32; byte++)
+        signal.resize(frame.data_len + 1);
+        for (size_t byte = 0; byte < frame.data_len; byte++)
         {
             signal.at(byte + 1) = frame.data[byte];
         }

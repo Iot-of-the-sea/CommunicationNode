@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <portaudio.h>
+#include <stdlib.h>
 #include "audioprofile.h" // Include your AudioProfile class
 
 #include "../data.h"
@@ -65,7 +66,7 @@ public:
 
 uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header);
 
-uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n);
+uint8_t transmit_data(AudioTransmitter &tx, uint8_t mode, uint8_t header, uint8_t *data_n, uint16_t len);
 
 uint8_t transmit_file(AudioTransmitter &tx, const char *file);
 

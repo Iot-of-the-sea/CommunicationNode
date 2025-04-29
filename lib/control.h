@@ -12,6 +12,7 @@
 #define TIMEOUT_ERROR 0x03
 #define IO_ERROR 0x04
 #define ARGUMENT_ERROR 0x05
+#define MEMORY_ERROR 0x06
 
 using namespace std;
 
