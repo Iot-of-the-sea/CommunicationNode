@@ -1,4 +1,5 @@
 #include "../../lib/audio/audiotransmitter.h"
+#include "../../lib/file_transfer/file_transfer.h"
 #include <fstream>
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
@@ -15,37 +16,38 @@ int main()
     cout << "running file Rx tests" << endl;
     audioTx.init_stream();
     init_receiver();
-    FileWriter file("./tst/testFile.txt");
-    file.open();
-    int counter = 0;
-    while (headerByte != DATA_DONE && counter < 20)
-    {
-        err = listen(result, &timeout);
-        if (!err && check_received_crc(result))
-        {
-            getHeaderByte(result, headerByte);
-            get_packet_data(result, rx_data);
+    err = receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
+    // FileWriter file("./tst/testFile.txt");
+    // file.open();
+    // int counter = 0;
+    // while (headerByte != DATA_DONE && counter < 20)
+    // {
+    //     err = listen(result, &timeout);
+    //     if (!err && check_received_crc(result))
+    //     {
+    //         getHeaderByte(result, headerByte);
+    //         get_packet_data(result, rx_data);
 
-            if (headerByte != lastHeader)
-            {
-                file.write(last_rx_data);
-            }
+    //         if (headerByte != lastHeader)
+    //         {
+    //             file.write(last_rx_data);
+    //         }
 
-            last_rx_data = rx_data;
-            lastHeader = headerByte;
-            transmit_data(audioTx, CTRL_MODE, ACK);
-            counter = 0;
-        }
-        else
-        {
-            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            counter++;
-        }
-    }
+    //         last_rx_data = rx_data;
+    //         lastHeader = headerByte;
+    //         transmit_data(audioTx, CTRL_MODE, ACK);
+    //         counter = 0;
+    //     }
+    //     else
+    //     {
+    //         transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+    //         counter++;
+    //     }
+    // }
 
     audioTx.close_stream();
     close_receiver();
-    file.close();
+    // file.close();
 
     cout << "close" << endl;
 
