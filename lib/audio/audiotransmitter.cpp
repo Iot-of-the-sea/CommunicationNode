@@ -219,13 +219,13 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     uint8_t frameNum = 0;
     uint8_t err;
 
-    TimeoutHandler timeout(100000);
+    TimeoutHandler timeout(500000);
 
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
     {
         chunks.push_back(string(frameBuf, FRAME_SIZE_BYTES));
-        memset(frameBuf, 0, sizeof(frameBuf));
+        memset(frameBuf, 0, FRAME_SIZE_BYTES);
     }
     chunks.push_back(string(frameBuf));
 
