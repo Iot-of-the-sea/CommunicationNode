@@ -4,9 +4,10 @@ using namespace std;
 using namespace chrono;
 
 string response;
-uint8_t headerByte, err;
+uint8_t headerByte, err, counter;
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {43000, 47000}, 50000));
+TimeoutHandler timeout(500000);
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
@@ -40,7 +41,6 @@ void IdleState::handle(NodeFSM &fsm)
     {
         init_receiver();
         audioTx.init_stream();
-        init_receiver();
         if (fsm.getIsROVMode())
         {
             cout << "to stage search" << endl;
@@ -174,12 +174,11 @@ void SendDataStartState::handle(NodeFSM &fsm)
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
+    cout << "State: SEND DATA FRAME" << endl;
     transmit_file(audioTx, "./lib/test.txt");
-    // transmit_file(audioTx, "./lib/01102521.csv");
 
-    transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     cout << "to stage echo confirmation" << endl;
-    fsm.changeState(std::make_unique<EchoConfirmationState>());
+    fsm.changeState(std::make_unique<SendDataDoneState>());
 }
 
 void SendEOTState::handle(NodeFSM &fsm)
@@ -313,6 +312,26 @@ void ReadDataStartState::handle(NodeFSM &fsm)
     }
 }
 
+void SendDataDoneState::handle(NodeFSM &fsm)
+{
+    cout << "State: SEND DATA DONE" << endl;
+    counter = 0;
+    err = transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+
+    while (listen(response, &timeout) != NO_ERROR && counter < 10)
+    {
+        counter++;
+    }
+    if (counter >= 10)
+    {
+        fsm.changeState(std::make_unique<IdleState>());
+    }
+    else
+    {
+        fsm.changeState(std::make_unique<EchoConfirmationState>());
+    }
+}
+
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
     // listen(response, string(1, static_cast<char>(DATA_DONE)));
@@ -323,7 +342,7 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
         bool hasFile = true; // TODO: change to variable
         confirmation = generate_parity_byte(hasFile);
         uint8_t confirmation_arr[1] = {confirmation};
-        transmit_data(audioTx, DATA_MODE, 0x00, confirmation_arr);
+        transmit_data(audioTx, DATA_MODE, 0x00, confirmation_arr, 1);
         cout << "to stage read confirmation" << endl;
         fsm.changeState(std::make_unique<ReadConfirmationState>());
     }

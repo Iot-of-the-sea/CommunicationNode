@@ -121,6 +121,12 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
+class SendDataDoneState : public NodeState
+{
+public:
+    void handle(NodeFSM &fsm) override;
+};
+
 class SendEOTState : public NodeState
 {
 public:
