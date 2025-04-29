@@ -1,7 +1,7 @@
 #include "../../lib/file_transfer/file_transfer.h"
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
-TimeoutHandler timeout(5000000);
+TimeoutHandler timeout(500000);
 
 int main()
 {
