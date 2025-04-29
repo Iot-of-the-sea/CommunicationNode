@@ -130,7 +130,7 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
         chunkStr = chunks.at(frameNum);
         chunkLen = chunkStr.length();
         memcpy(frameBuf, chunkStr.data(), chunkLen);
-        cout << "transmit: " << (unsigned int)frameNum << endl;
+        cout << "transmit: " << (unsigned int)frameNum << " " << chunkStr << endl;
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
         testData->sent++;
 
