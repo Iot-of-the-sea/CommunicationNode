@@ -1,6 +1,6 @@
 #include "file_transfer.h"
 
-uint8_t transmit_file(AudioTransmitter &tx, const char *file)
+uint8_t transmit_file(AudioTransmitter &tx, const char *file, TimeoutHandler &timeout)
 {
     ifstream ifile(file, ifstream::binary); // Open the file
     if (!ifile)
@@ -13,8 +13,6 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     char *frameBuf = new char[FRAME_SIZE_BYTES]; // change to nonallocated
     uint8_t frameNum = 0;
     uint8_t err;
-
-    TimeoutHandler timeout(500000);
 
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak

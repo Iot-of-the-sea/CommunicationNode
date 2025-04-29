@@ -9,6 +9,7 @@
 #include <thread>
 #include <string>
 
+#include "../lib/file_transfer/file_transfer.h"
 #include "../lib/audio/audiotransmitter.h"
 #include "../lib//audio/audioprofile.h"
 #include "../lib/protocol.h"

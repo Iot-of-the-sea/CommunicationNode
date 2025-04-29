@@ -175,7 +175,7 @@ void SendDataStartState::handle(NodeFSM &fsm)
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
     cout << "State: SEND DATA FRAME" << endl;
-    transmit_file(audioTx, "./lib/test.txt");
+    transmit_file(audioTx, "./lib/test.txt", timeout);
 
     cout << "to stage echo confirmation" << endl;
     fsm.changeState(std::make_unique<SendDataDoneState>());

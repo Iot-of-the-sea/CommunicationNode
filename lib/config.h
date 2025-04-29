@@ -3,6 +3,6 @@
 
 #define LINUX true
 #define DEPLOYED true
-#define PARAMETER_TESTING true
+#define PARAMETER_TESTING false
 
 #endif // __CONFIG__

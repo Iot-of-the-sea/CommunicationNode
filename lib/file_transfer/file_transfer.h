@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "../audio/audiotransmitter.h"
 #include "../audio/audiorx/audioreceiver.h"
+#include "../timeout/timeout.h"
 
 #if DEPLOYED
 #include "../audio/audiorx/audioreceiver.h"
@@ -12,7 +13,7 @@
 #include "../../../tst/testlib/audioreceiver_test.h"
 #endif
 
-uint8_t transmit_file(AudioTransmitter &tx, const char *file);
+uint8_t transmit_file(AudioTransmitter &tx, const char *file, TimeoutHandler &timeout);
 
 uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &timeout, uint16_t maxTries);
 
