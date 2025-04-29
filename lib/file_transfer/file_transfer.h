@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "../audio/audiotransmitter.h"
 #include "../audio/audiorx/audioreceiver.h"
+#include "../gpio/gpio.h"
 
 #define DEPLOYED true
 #define PARAMETER_TESTING true

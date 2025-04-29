@@ -10,8 +10,8 @@ BUILD = build
 PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
 
 SRC_DIRS := src lib lib/audio lib/audio/audiorx # tst/testlib
-TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout # tst/testlib
-RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout # tst/testlib
+TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer lib/gpio # tst/testlib
+RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer lib/gpio # tst/testlib
 
 TARGET_DIRS = $(RX_TST_DIRS)
 BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
@@ -41,6 +41,9 @@ $(BUILD_DIRS):
 debug_program: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/data.o $(BUILD)/control.o $(SRC)/fsm.cpp $(SRC)/fsm.h
 	$(CC) $(CFLAGS) -o program $(SRC)/fsm.cpp $(BUILD)/audiotransmitter.o $(BUILD)/audioprofile.o $(BUILD)/data.o $(PA)
 
+
+gpio: lib/gpio/gpio.cpp
+	$(CC) $(CFLAGS) -o $(TST)/gpio_test lib/gpio/gpio.cpp -lgpiod
 
 data: data.o
 	$(CC) $(CFLAGS) -o $(BUILD)/data $(BUILD)/data.o

@@ -18,6 +18,7 @@ int main()
     cout << "running file Rx tests" << endl;
     audioTx.init_stream();
     init_receiver();
+    init_gpio();
 
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
     err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 20, &rxTestData);
@@ -34,5 +35,6 @@ int main()
     cout << "Timeouts               : " << rxTestData.timeouts << endl;
     cout << "Failed CRCs            : " << rxTestData.crc_failed << endl;
 
+    close_gpio();
     return 0;
 }
