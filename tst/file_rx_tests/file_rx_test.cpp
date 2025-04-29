@@ -4,52 +4,35 @@
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 
-TimeoutHandler timeout(1000000);
+TimeoutHandler timeout(50000);
 
 string result, last_rx_data, rx_data;
 uint8_t headerByte = 0x00;
 uint8_t lastHeader = 0x00;
 uint8_t err;
 
+RxTestData rxTestData;
+
 int main()
 {
     cout << "running file Rx tests" << endl;
     audioTx.init_stream();
     init_receiver();
-    err = receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
-    // FileWriter file("./tst/testFile.txt");
-    // file.open();
-    // int counter = 0;
-    // while (headerByte != DATA_DONE && counter < 20)
-    // {
-    //     err = listen(result, &timeout);
-    //     if (!err && check_received_crc(result))
-    //     {
-    //         getHeaderByte(result, headerByte);
-    //         get_packet_data(result, rx_data);
 
-    //         if (headerByte != lastHeader)
-    //         {
-    //             file.write(last_rx_data);
-    //         }
-
-    //         last_rx_data = rx_data;
-    //         lastHeader = headerByte;
-    //         transmit_data(audioTx, CTRL_MODE, ACK);
-    //         counter = 0;
-    //     }
-    //     else
-    //     {
-    //         transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-    //         counter++;
-    //     }
-    // }
+    chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
+    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 20, &rxTestData);
+    chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
     audioTx.close_stream();
     close_receiver();
-    // file.close();
 
-    cout << "close" << endl;
+    cout << "---------- RESULTS ----------" << endl;
+    cout << "Elapsed Time       : "
+         << chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()
+         << " ms" << endl;
+    cout << "Total Packets Received : " << rxTestData.received << endl;
+    cout << "Timeouts               : " << rxTestData.timeouts << endl;
+    cout << "Failed CRCs            : " << rxTestData.crc_failed << endl;
 
     return 0;
 }

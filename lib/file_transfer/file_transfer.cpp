@@ -164,9 +164,9 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
 }
 
 // TODO: test this
-uint8_t receiveFile(AudioTransmitter &tx, const char *fileName,
-                    TimeoutHandler &timeout, uint16_t maxTries,
-                    RxTestData *testData)
+uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
+                         TimeoutHandler &timeout, uint16_t maxTries,
+                         RxTestData *testData)
 {
     testData->received = 0;
     testData->timeouts = 0;
@@ -190,9 +190,9 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName,
         else
         {
             testData->received++;
+            if (!check_received_crc(result))
+                testData->crc_failed++;
         }
-        if (!check_received_crc(result))
-            testData->crc_failed++;
 
         if (!err && check_received_crc(result))
         {
@@ -215,6 +215,9 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName,
             counter++;
         }
     }
+
+    if (counter >= maxTries)
+        file.write(last_rx_data);
 
     file.close();
 
