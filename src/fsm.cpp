@@ -6,7 +6,7 @@ using namespace chrono;
 string response;
 uint8_t headerByte, err, counter;
 
-AudioTransmitter audioTx(AudioProfile(1000.0, {43000, 47000}, 50000));
+AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 TimeoutHandler timeout(500000);
 
 frame nodeFrame = {
@@ -86,6 +86,7 @@ void CalibrateState::handle(NodeFSM &fsm)
             transmit_data(audioTx, CTRL_MODE, ACK);
 
             cout << "to stage read id" << endl;
+            counter = 0;
             fsm.changeState(std::make_unique<ReadIDState>());
         }
         else
@@ -118,6 +119,7 @@ void SendIDState::handle(NodeFSM &fsm)
         cout << "to stage send rts" << endl;
         fsm.changeState(std::make_unique<SendRTSState>());
     }
+
     else
     {
         cout << "stay in send id" << endl;
@@ -243,19 +245,32 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
 
 void ReadIDState::handle(NodeFSM &fsm)
 {
-    cout << "valid? (y/n) ";
-    cin >> response;
+    // cout << "valid? (y/n) ";
+    // cin >> response;
 
-    if (response == "y")
+    timeout.setDuration(5000000);
+    err = listen(response, &timeout);
+
+    if (err == TIMEOUT_ERROR)
     {
-        transmit_data(audioTx, CTRL_MODE, ACK);
-        cout << "to stage read rts" << endl;
-        fsm.changeState(std::make_unique<ReadRTSState>());
+        cout << "revert to calibrate stage" << endl;
+        fsm.changeState(std::make_unique<CalibrateState>());
     }
     else
     {
-        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-        cout << "stay in read id" << endl;
+        err = getHeaderByte(response, headerByte);
+        if (headerByte == 0xA4)
+        {
+            transmit_data(audioTx, CTRL_MODE, ACK);
+            cout << "to stage read rts" << endl;
+            fsm.changeState(std::make_unique<ReadRTSState>());
+        }
+        else
+        {
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+            cout << "stay in read id (count: " << (unsigned int)counter << ")" << endl;
+            counter++;
+        }
     }
 }
 
