@@ -58,9 +58,6 @@ uint8_t frameFromHeaderData(frame &frame, headerData &header)
     frame.header = HEADER_DATA;
     frame.data_len = 6;
 
-    cout << "size: " << (unsigned int)header.fileSizeBytes << endl;
-    cout << "id: " << (unsigned int)header.nodeId << endl;
-
     uint8_t headerDataBytes[FRAME_SIZE_BYTES] = {0};
     headerDataBytes[0] = (uint8_t)(header.nodeId);
     headerDataBytes[1] = (uint8_t)(header.nodeId >> 8);
@@ -68,11 +65,6 @@ uint8_t frameFromHeaderData(frame &frame, headerData &header)
     for (size_t i = 0; i < 4; i++)
     {
         headerDataBytes[2 + i] = (uint8_t)(header.fileSizeBytes >> (8 * i));
-    }
-
-    for (auto &i : headerDataBytes)
-    {
-        cout << (unsigned int)i << endl;
     }
 
     memcpy(frame.data, headerDataBytes, FRAME_SIZE_BYTES);
@@ -134,6 +126,12 @@ uint8_t check_received_crc(string packet)
     crc_t actual = find_crc(packet);
 
     return actual == expected;
+}
+
+uint32_t getFileSize(const char *fileName)
+{
+    filesystem::path filePath = fileName;
+    return filesystem::file_size(filePath);
 }
 
 FileWriter::FileWriter(string fileName)

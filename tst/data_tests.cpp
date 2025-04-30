@@ -436,6 +436,18 @@ void frameFromHeaderData_givenFullHeader_returnsArgError()
     TEST_ASSERT_EQUAL_UINT8(0x12, testFrame.data[5]);
 }
 
+void getFileSize_givenFiles_returnsSize()
+{
+    uint32_t size = getFileSize("./tst/testfiles/32bytes.txt");
+    TEST_ASSERT_EQUAL_UINT32(32, size);
+
+    size = getFileSize("./tst/testfiles/1kB.txt");
+    TEST_ASSERT_EQUAL_UINT32(1024, size);
+
+    size = getFileSize("./tst/testfiles/empty.txt");
+    TEST_ASSERT_EQUAL_UINT32(0, size);
+}
+
 int main()
 {
     UNITY_BEGIN();
@@ -477,6 +489,8 @@ int main()
 
     RUN_TEST(frameFromHeaderData_givenEmptyHeader_givesZeroData);
     RUN_TEST(frameFromHeaderData_givenFullHeader_returnsArgError);
+
+    RUN_TEST(getFileSize_givenFiles_returnsSize);
 
     return UNITY_END();
 }
