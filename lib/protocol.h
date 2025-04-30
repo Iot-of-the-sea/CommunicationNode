@@ -19,6 +19,7 @@
 
 #define DATA_START (uint8_t)(0b0000000)
 #define DATA_DONE (uint8_t)(0b0110011)
+#define HEADER_DATA (uint8_t)(0b0011100)
 #define EOT (uint8_t)(0b1100011)
 
 // TODO: make class instead of struct
@@ -26,14 +27,21 @@ typedef struct
 {
     uint8_t mode;
     uint8_t header;
-    uint16_t data_len;
-    uint8_t data[FRAME_SIZE_BYTES];
+    uint16_t data_len = FRAME_SIZE_BYTES;
+    uint8_t data[FRAME_SIZE_BYTES] = {0};
 } frame;
+
+typedef struct
+{
+    uint16_t nodeId = 0;
+    uint32_t fileSizeBytes = 0;
+} headerData;
 
 uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n, uint8_t *data_n);
 uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n);
 uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame);
 uint8_t packetFromFrame(std::vector<uint8_t> &packet, frame &frame);
+uint8_t frameFromHeaderData(frame &frame, headerData &header);
 uint8_t printFrame(frame &frame);
 
 #endif // __PROTOCOL__

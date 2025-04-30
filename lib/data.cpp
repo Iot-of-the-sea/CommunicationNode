@@ -52,6 +52,33 @@ uint8_t get_packet_data(string &packet, string &data)
     return 0;
 }
 
+uint8_t frameFromHeaderData(frame &frame, headerData &header)
+{
+    frame.mode = DATA_MODE;
+    frame.header = HEADER_DATA;
+    frame.data_len = 6;
+
+    cout << "size: " << (unsigned int)header.fileSizeBytes << endl;
+    cout << "id: " << (unsigned int)header.nodeId << endl;
+
+    uint8_t headerDataBytes[FRAME_SIZE_BYTES] = {0};
+    headerDataBytes[0] = (uint8_t)(header.nodeId);
+    headerDataBytes[1] = (uint8_t)(header.nodeId >> 8);
+
+    for (size_t i = 0; i < 4; i++)
+    {
+        headerDataBytes[2 + i] = (uint8_t)(header.fileSizeBytes >> (8 * i));
+    }
+
+    for (auto &i : headerDataBytes)
+    {
+        cout << (unsigned int)i << endl;
+    }
+
+    memcpy(frame.data, headerDataBytes, FRAME_SIZE_BYTES);
+    return NO_ERROR;
+}
+
 uint8_t printFrame(frame &frame)
 {
     char chunk[10];
