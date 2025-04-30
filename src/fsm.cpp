@@ -286,7 +286,7 @@ void ReadIDState::handle(NodeFSM &fsm)
     else
     {
         err = getHeaderByte(response, headerByte);
-        if (headerByte == 0xA4)
+        if (!err && headerByte == 0xA4)
         {
             transmit_data(audioTx, CTRL_MODE, ACK);
             cout << "to stage read rts" << endl;
@@ -304,17 +304,27 @@ void ReadIDState::handle(NodeFSM &fsm)
 void ReadRTSState::handle(NodeFSM &fsm)
 {
     // listen(response, string(1, static_cast<char>(RTS)));
-    listen(response);
-    err = getHeaderByte(response, headerByte);
-    if (!err && headerByte == RTS)
+    timeout.setDuration(5000000);
+
+    err = listen(response, &timeout);
+    if (err == TIMEOUT_ERROR)
     {
-        transmit_data(audioTx, CTRL_MODE, CTS);
-        cout << "to stage read header" << endl;
-        fsm.changeState(std::make_unique<ReadHeaderState>());
+        cout << "revert to idle stage" << endl;
+        fsm.changeState(std::make_unique<IdleState>());
     }
     else
     {
-        cout << "stay in read rts" << endl;
+        err = getHeaderByte(response, headerByte);
+        if (!err && headerByte == RTS)
+        {
+            transmit_data(audioTx, CTRL_MODE, CTS);
+            cout << "to stage read header" << endl;
+            fsm.changeState(std::make_unique<ReadHeaderState>());
+        }
+        else
+        {
+            cout << "stay in read rts" << endl;
+        }
     }
 }
 
