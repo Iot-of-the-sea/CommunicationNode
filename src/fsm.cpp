@@ -98,10 +98,11 @@ void CalibrateState::handle(NodeFSM &fsm)
     }
     else
     {
-        listen(response);
+        err = listen(response, &timeout);
         if (isAck(response))
         {
             cout << "to stage send id" << endl;
+            counter = 0;
             fsm.changeState(std::make_unique<SendIDState>());
         }
         else
@@ -113,8 +114,24 @@ void CalibrateState::handle(NodeFSM &fsm)
 
 void SendIDState::handle(NodeFSM &fsm)
 {
-    listen(response);
-    if (isAck(response))
+    cout << "here" << endl;
+    transmit_data(audioTx, DATA_MODE, NODE_ID);
+    cout << "transmitted" << endl;
+
+    err = listen(response, &timeout);
+    cout << counter << endl;
+    if (counter >= 10)
+    {
+        cout << "revert to calibrate stage" << endl;
+        counter = 0;
+        fsm.changeState(std::make_unique<CalibrateState>());
+    }
+    else if (err == TIMEOUT_ERROR)
+    {
+        counter++;
+        cout << "stay in send id" << endl;
+    }
+    else if (isAck(response))
     {
         cout << "to stage send rts" << endl;
         fsm.changeState(std::make_unique<SendRTSState>());
