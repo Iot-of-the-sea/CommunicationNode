@@ -199,6 +199,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
                 testData->crc_failed++;
         }
 
+        set_gpio_mode(TX_MODE);
         if (!err && check_received_crc(result))
         {
             getHeaderByte(result, headerByte);
@@ -211,13 +212,11 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
             last_rx_data = rx_data;
             lastHeader = headerByte;
-            set_gpio_mode(TX_MODE);
             transmit_data(tx, CTRL_MODE, ACK);
             counter = 0;
         }
         else
         {
-            set_gpio_mode(TX_MODE);
             transmit_data(tx, CTRL_MODE, NAK_SEND);
             counter++;
         }

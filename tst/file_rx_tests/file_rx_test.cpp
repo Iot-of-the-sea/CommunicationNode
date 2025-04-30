@@ -4,7 +4,7 @@
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 
-TimeoutHandler timeout(50000);
+TimeoutHandler timeout(1000000);
 
 string result, last_rx_data, rx_data;
 uint8_t headerByte = 0x00;
@@ -19,13 +19,15 @@ int main()
     audioTx.init_stream();
     init_receiver();
     init_gpio();
+    init_pins("toggle");
 
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 20, &rxTestData);
+    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 50, &rxTestData);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
     audioTx.close_stream();
     close_receiver();
+    close_gpio();
 
     cout << "---------- RESULTS ----------" << endl;
     cout << "Elapsed Time       : "
