@@ -1,4 +1,5 @@
 #include "../../lib/file_transfer/file_transfer.h"
+#include <vector>
 #include <chrono>
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
@@ -11,30 +12,49 @@ int main()
     cout << "running file Tx tests" << endl;
     audioTx.init_stream();
     init_receiver();
+    init_gpio();
+    init_pins("toggle");
 
-    chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    transmit_file_test(audioTx, "./tst/test.txt", timeout, &txTestData);
-    transmit_data(audioTx, CTRL_MODE, DATA_DONE);
-    chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
-
-    string result;
-    uint8_t err = listen(result, &timeout);
-    if (err)
+    std::vector<uint8_t> ones(10000);
+    set_gpio_mode(TX_MODE);
+    for (size_t i = 0; i < ones.size(); i++)
     {
-        transmit_data(audioTx, CTRL_MODE, DATA_DONE);
-        err = listen(result, &timeout);
+        ones.at(i) = 0xFF;
     }
+
+    // for (size_t i = 0; i < ones.size(); i++)
+    // {
+    //     cout << (unsigned int)(ones.at(i)) << endl;
+    // }
+
+    audioTx.play_audio
+    while (true)
+        audioTx.play_sequence(ones, false);
+
+    // chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
+    // transmit_file_test(audioTx, "./tst/test.txt", timeout, &txTestData);
+    // transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    // chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
+
+    // string result;
+    // uint8_t err = listen(result, &timeout);
+    // if (err)
+    // {
+    //     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    //     err = listen(result, &timeout);
+    // }
     audioTx.close_stream();
     close_receiver();
+    close_gpio();
 
-    cout << "---------- RESULTS ----------" << endl;
-    cout << "Elapsed Time       : "
-         << chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()
-         << " ms" << endl;
-    cout << "Total Packets Sent : " << txTestData.sent << endl;
-    cout << "ACKs Received      : " << txTestData.ack << endl;
-    cout << "NAKs Recevied      : " << txTestData.nak << endl;
-    cout << "Timeouts           : " << txTestData.timeouts << endl;
+    // cout << "---------- RESULTS ----------" << endl;
+    // cout << "Elapsed Time       : "
+    //      << chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()
+    //      << " ms" << endl;
+    // cout << "Total Packets Sent : " << txTestData.sent << endl;
+    // cout << "ACKs Received      : " << txTestData.ack << endl;
+    // cout << "NAKs Recevied      : " << txTestData.nak << endl;
+    // cout << "Timeouts           : " << txTestData.timeouts << endl;
 }
 
 // Main function to run the example
