@@ -19,13 +19,21 @@ int main()
     audioTx.init_stream();
     init_receiver();
     init_gpio();
+    init_pins("toggle");
 
+    set_gpio_mode(RX_MODE);
+
+    while (true)
+    {
+        cout << ".";
+    }
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 20, &rxTestData);
+    // err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 20, &rxTestData);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
     audioTx.close_stream();
     close_receiver();
+    close_gpio();
 
     cout << "---------- RESULTS ----------" << endl;
     cout << "Elapsed Time       : "
