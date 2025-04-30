@@ -41,6 +41,7 @@ uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n, uint8_t *dat
 uint8_t updateFrame(frame &frame, uint8_t mode_n, uint8_t header_n);
 uint8_t packFrame(std::vector<uint8_t> &signal, frame &frame);
 uint8_t packetFromFrame(std::vector<uint8_t> &packet, frame &frame);
+uint8_t packetFromHeaderData(vector<uint8_t> &packet, headerData &header);
 uint8_t frameFromHeaderData(frame &frame, headerData &header);
 uint8_t printFrame(frame &frame);
 

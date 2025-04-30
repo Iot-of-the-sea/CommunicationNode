@@ -40,7 +40,7 @@ uint8_t packetFromFrame(vector<uint8_t> &packet, frame &frame)
     packFrame(packet, frame);
     packet.push_back(find_crc(packet)); // TODO: test if this is doing anything
 
-    return 0;
+    return NO_ERROR;
 }
 
 uint8_t get_packet_data(string &packet, string &data)
@@ -77,6 +77,18 @@ uint8_t frameFromHeaderData(frame &frame, headerData &header)
 
     memcpy(frame.data, headerDataBytes, FRAME_SIZE_BYTES);
     return NO_ERROR;
+}
+
+uint8_t packetFromHeaderData(vector<uint8_t> &packet, headerData &header)
+{
+    frame frame_out;
+    uint8_t err = frameFromHeaderData(frame_out, header);
+    if (err)
+    {
+        return err;
+    }
+
+    return packetFromFrame(packet, frame_out);
 }
 
 uint8_t printFrame(frame &frame)
