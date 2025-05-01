@@ -27,7 +27,6 @@ int main()
     //     cout << (unsigned int)(ones.at(i)) << endl;
     // }
 
-    audioTx.play_audio
     while (true)
         audioTx.play_sequence(ones, false);
 
