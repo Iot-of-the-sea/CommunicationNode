@@ -1,6 +1,6 @@
 #include "file_transfer.h"
 
-uint8_t transmit_file(AudioTransmitter &tx, const char *file)
+uint8_t transmit_file(AudioTransmitter &tx, const char *file, TimeoutHandler &timeout)
 {
     ifstream ifile(file, ifstream::binary); // Open the file
     if (!ifile)
@@ -13,8 +13,6 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *file)
     char *frameBuf = new char[FRAME_SIZE_BYTES]; // change to nonallocated
     uint8_t frameNum = 0;
     uint8_t err;
-
-    TimeoutHandler timeout(500000);
 
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
@@ -136,19 +134,20 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
         testData->sent++;
 
-        set_gpio_mode(RX_MODE);
-        err = listen(response, &timeout);
-        if (err == TIMEOUT_ERROR)
-            testData->timeouts++;
-        else
-        {
-            if (isAck(response))
-                testData->ack++;
-            else
-                testData->nak++;
-        }
+        // set_gpio_mode(RX_MODE);
+        // err = listen(response, &timeout);
+        // if (err == TIMEOUT_ERROR)
+        //     testData->timeouts++;
+        // else
+        // {
+        //     if (isAck(response))
+        //         testData->ack++;
+        //     else
+        //         testData->nak++;
+        // }
 
-        if (!err && isAck(response))
+        // if (!err && isAck(response))
+        if (true)
         {
             cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
             frameNum++;
@@ -195,10 +194,13 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         else
         {
             testData->received++;
-            if (!check_received_crc(result))
+            if (!err && !check_received_crc(result))
+            {
                 testData->crc_failed++;
+            }
         }
 
+        set_gpio_mode(TX_MODE);
         if (!err && check_received_crc(result))
         {
             getHeaderByte(result, headerByte);
@@ -211,14 +213,14 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
             last_rx_data = rx_data;
             lastHeader = headerByte;
-            // set_gpio_mode(TX_MODE);
-            // transmit_data(tx, CTRL_MODE, ACK);
+            set_gpio_mode(TX_MODE);
+            transmit_data(tx, CTRL_MODE, ACK);
             counter = 0;
         }
         else
         {
-            // set_gpio_mode(TX_MODE);
-            // transmit_data(tx, CTRL_MODE, NAK_SEND);
+            set_gpio_mode(TX_MODE);
+            transmit_data(tx, CTRL_MODE, NAK_SEND);
             counter++;
         }
     }

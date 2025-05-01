@@ -2,11 +2,14 @@
 #ifndef __FSM__
 #define __FSM__
 
+#include "../lib/config.h"
+
 #include <iostream>
 #include <memory>
 #include <thread>
 #include <string>
 
+#include "../lib/file_transfer/file_transfer.h"
 #include "../lib/audio/audiotransmitter.h"
 #include "../lib//audio/audioprofile.h"
 #include "../lib/protocol.h"
@@ -14,9 +17,6 @@
 #include <fstream>
 #include <unistd.h>
 #include <string.h>
-
-#define DEPLOYED true
-#define LINUX true
 
 #if DEPLOYED
 #include "../lib/audio/audiorx/audioreceiver.h"
@@ -54,17 +54,21 @@ class NodeFSM
 private:
     std::unique_ptr<NodeState> _state;
     bool _rov_mode;
+    uint16_t _counter;
 
 public:
-    NodeFSM() : _state(std::make_unique<IdleState>()), _rov_mode(true) {}
+    NodeFSM() : _state(std::make_unique<IdleState>()), _rov_mode(true),
+                _counter(0) {}
 
-    NodeFSM(bool rov_mode) : _state(std::make_unique<IdleState>()), _rov_mode(rov_mode)
+    NodeFSM(bool rov_mode) : _state(std::make_unique<IdleState>()),
+                             _rov_mode(rov_mode), _counter(0)
     {
         cout << "selected mode: " << _rov_mode << endl;
     }
 
     void changeState(std::unique_ptr<NodeState> newState)
     {
+        _counter = 0;
         _state = std::move(newState);
     }
 
@@ -77,6 +81,9 @@ public:
     {
         return _rov_mode;
     }
+
+    uint16_t getCount() { return _counter; }
+    void incrCount() { _counter++; }
 };
 
 class CalibrateState : public NodeState

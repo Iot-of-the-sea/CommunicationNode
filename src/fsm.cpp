@@ -4,10 +4,10 @@ using namespace std;
 using namespace chrono;
 
 string response;
-uint8_t headerByte, err, counter;
+uint8_t headerByte, err;
 
-AudioTransmitter audioTx(AudioProfile(1000.0, {43000, 47000}, 50000));
-TimeoutHandler timeout(500000);
+AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
+TimeoutHandler timeout(1000000);
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
@@ -97,7 +97,7 @@ void CalibrateState::handle(NodeFSM &fsm)
     }
     else
     {
-        listen(response);
+        err = listen(response, &timeout);
         if (isAck(response))
         {
             cout << "to stage send id" << endl;
@@ -112,8 +112,21 @@ void CalibrateState::handle(NodeFSM &fsm)
 
 void SendIDState::handle(NodeFSM &fsm)
 {
-    listen(response);
-    if (isAck(response))
+    transmit_data(audioTx, DATA_MODE, NODE_ID);
+
+    err = listen(response, &timeout);
+    cout << (unsigned int)fsm.getCount() << endl;
+    if (fsm.getCount() >= 10)
+    {
+        cout << "revert to calibrate stage" << endl;
+        fsm.changeState(std::make_unique<CalibrateState>());
+    }
+    else if (err == TIMEOUT_ERROR)
+    {
+        fsm.incrCount();
+        cout << "stay in send id" << endl;
+    }
+    else if (!err && isAck(response))
     {
         cout << "to stage send rts" << endl;
         fsm.changeState(std::make_unique<SendRTSState>());
@@ -129,16 +142,32 @@ void SendRTSState::handle(NodeFSM &fsm)
     transmit_data(audioTx, CTRL_MODE, RTS);
 
     // listen(response, string(1, static_cast<char>(CTS)));
-    listen(response);
-    err = getHeaderByte(response, headerByte);
-    if (!err && headerByte == CTS)
+    err = listen(response, &timeout);
+
+    cout << (unsigned int)fsm.getCount() << endl;
+    if (fsm.getCount() >= 10) // simplify this control logic somehow
     {
-        cout << "to stage send header" << endl;
-        fsm.changeState(std::make_unique<SendHeaderState>());
+        cout << "return to idle state" << endl;
+        fsm.changeState(std::make_unique<IdleState>());
+    }
+    else if (err == TIMEOUT_ERROR)
+    {
+        fsm.incrCount();
+        cout << "stay in send rts" << endl;
     }
     else
     {
-        cout << "stay in send rts" << endl;
+        err = getHeaderByte(response, headerByte);
+        if (!err && headerByte == CTS)
+        {
+            cout << "to stage send header" << endl;
+            fsm.changeState(std::make_unique<SendHeaderState>());
+        }
+        else
+        {
+            fsm.incrCount();
+            cout << "stay in send rts" << endl;
+        }
     }
 }
 
@@ -175,7 +204,7 @@ void SendDataStartState::handle(NodeFSM &fsm)
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
     cout << "State: SEND DATA FRAME" << endl;
-    transmit_file(audioTx, "./lib/test.txt");
+    transmit_file(audioTx, "./lib/test.txt", timeout);
 
     cout << "to stage echo confirmation" << endl;
     fsm.changeState(std::make_unique<SendDataDoneState>());
@@ -243,36 +272,59 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
 
 void ReadIDState::handle(NodeFSM &fsm)
 {
-    cout << "valid? (y/n) ";
-    cin >> response;
+    // cout << "valid? (y/n) ";
+    // cin >> response;
 
-    if (response == "y")
+    timeout.setDuration(5000000);
+    err = listen(response, &timeout);
+
+    if (err == TIMEOUT_ERROR)
     {
-        transmit_data(audioTx, CTRL_MODE, ACK);
-        cout << "to stage read rts" << endl;
-        fsm.changeState(std::make_unique<ReadRTSState>());
+        cout << "revert to calibrate stage" << endl;
+        fsm.changeState(std::make_unique<CalibrateState>());
     }
     else
     {
-        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-        cout << "stay in read id" << endl;
+        err = getHeaderByte(response, headerByte);
+        if (!err && headerByte == 0xA4)
+        {
+            transmit_data(audioTx, CTRL_MODE, ACK);
+            cout << "to stage read rts" << endl;
+            fsm.changeState(std::make_unique<ReadRTSState>());
+        }
+        else
+        {
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+            cout << "stay in read id (count: " << (unsigned int)fsm.getCount() << ")" << endl;
+            fsm.incrCount();
+        }
     }
 }
 
 void ReadRTSState::handle(NodeFSM &fsm)
 {
     // listen(response, string(1, static_cast<char>(RTS)));
-    listen(response);
-    err = getHeaderByte(response, headerByte);
-    if (!err && headerByte == RTS)
+    timeout.setDuration(5000000);
+
+    err = listen(response, &timeout);
+    if (err == TIMEOUT_ERROR)
     {
-        transmit_data(audioTx, CTRL_MODE, CTS);
-        cout << "to stage read header" << endl;
-        fsm.changeState(std::make_unique<ReadHeaderState>());
+        cout << "revert to idle stage" << endl;
+        fsm.changeState(std::make_unique<IdleState>());
     }
     else
     {
-        cout << "stay in read rts" << endl;
+        err = getHeaderByte(response, headerByte);
+        if (!err && headerByte == RTS)
+        {
+            transmit_data(audioTx, CTRL_MODE, CTS);
+            cout << "to stage read header" << endl;
+            fsm.changeState(std::make_unique<ReadHeaderState>());
+        }
+        else
+        {
+            cout << "stay in read rts" << endl;
+        }
     }
 }
 
@@ -315,7 +367,7 @@ void ReadDataStartState::handle(NodeFSM &fsm)
 void SendDataDoneState::handle(NodeFSM &fsm)
 {
     cout << "State: SEND DATA DONE" << endl;
-    counter = 0;
+    int counter = 0;
     err = transmit_data(audioTx, CTRL_MODE, DATA_DONE);
 
     while (listen(response, &timeout) != NO_ERROR && counter < 10)

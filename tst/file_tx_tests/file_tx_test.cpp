@@ -20,12 +20,12 @@ int main()
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
     string result;
-    uint8_t err = listen(result, &timeout);
-    if (err)
-    {
-        transmit_data(audioTx, CTRL_MODE, DATA_DONE);
-        err = listen(result, &timeout);
-    }
+    // uint8_t err = listen(result, &timeout);
+    // if (err)
+    // {
+    //     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    //     err = listen(result, &timeout);
+    // }
     audioTx.close_stream();
     close_receiver();
     close_gpio();

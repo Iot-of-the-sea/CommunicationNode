@@ -13,12 +13,13 @@
  *  - ReflectOut    = False
  *  - Algorithm     = bit-by-bit
  */
-#include "crc8.h"     /* include the header file generated with pycrc */
+
+// SMBUS
+
+#include "crc8.h" /* include the header file generated with pycrc */
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-
-
 
 crc_t crc_update(crc_t crc, const void *data, size_t data_len)
 {
@@ -27,12 +28,15 @@ crc_t crc_update(crc_t crc, const void *data, size_t data_len)
     bool bit;
     unsigned char c;
 
-    while (data_len--) {
+    while (data_len--)
+    {
         c = *d++;
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < 8; i++)
+        {
             bit = crc & 0x80;
             crc = (crc << 1) | ((c >> (7 - i)) & 0x01);
-            if (bit) {
+            if (bit)
+            {
                 crc ^= 0x07;
             }
         }
@@ -41,16 +45,17 @@ crc_t crc_update(crc_t crc, const void *data, size_t data_len)
     return crc & 0xff;
 }
 
-
 crc_t crc_finalize(crc_t crc)
 {
     unsigned int i;
     bool bit;
 
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < 8; i++)
+    {
         bit = crc & 0x80;
         crc <<= 1;
-        if (bit) {
+        if (bit)
+        {
             crc ^= 0x07;
         }
     }
