@@ -13,7 +13,7 @@ SRC_DIRS := src lib lib/audio lib/audio/audiorx lib/timeout lib/file_transfer li
 TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer lib/gpio
 RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer lib/gpio
 
-TARGET_DIRS = $(RX_TST_DIRS)
+TARGET_DIRS = $(SRC_DIRS)
 BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
 SRC_FILES := $(foreach dir,$(TARGET_DIRS),$(wildcard $(dir)/*.cpp) $(wildcard $(dir)/*.c))
 
