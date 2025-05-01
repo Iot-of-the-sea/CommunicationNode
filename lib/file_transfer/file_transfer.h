@@ -1,13 +1,12 @@
 #ifndef __FILE_TRANSFER__
 #define __FILE_TRANSFER__
 
+#include "../config.h"
 #include <stdint.h>
 #include "../audio/audiotransmitter.h"
 #include "../audio/audiorx/audioreceiver.h"
 #include "../gpio/gpio.h"
-
-#define DEPLOYED true
-#define PARAMETER_TESTING true
+#include "../timeout/timeout.h"
 
 #if DEPLOYED
 #include "../audio/audiorx/audioreceiver.h"
@@ -15,7 +14,7 @@
 #include "../../../tst/testlib/audioreceiver_test.h"
 #endif
 
-uint8_t transmit_file(AudioTransmitter &tx, const char *file);
+uint8_t transmit_file(AudioTransmitter &tx, const char *file, TimeoutHandler &timeout);
 
 uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &timeout, uint16_t maxTries);
 

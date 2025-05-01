@@ -9,9 +9,9 @@ BUILD = build
 # PA = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
 PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
 
-SRC_DIRS := src lib lib/audio lib/audio/audiorx # tst/testlib
-TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer lib/gpio # tst/testlib
-RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer lib/gpio # tst/testlib
+SRC_DIRS := src lib lib/audio lib/audio/audiorx lib/timeout lib/file_transfer # tst/testlib
+TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer lib/gpio lib/file_transfer # tst/testlib
+RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer lib/gpio lib/file_transfer # tst/testlib
 
 TARGET_DIRS = $(TX_TST_DIRS)
 BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
