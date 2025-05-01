@@ -3,7 +3,7 @@
 
 #define LINUX true
 #define DEPLOYED true
-#define PARAMETER_TESTING false
+#define PARAMETER_TESTING true
 
 #define NODE_ID 0x24
 

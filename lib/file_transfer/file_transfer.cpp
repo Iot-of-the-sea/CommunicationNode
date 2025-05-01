@@ -193,8 +193,10 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         else
         {
             testData->received++;
-            if (!check_received_crc(result))
+            if (!err && !check_received_crc(result))
+            {
                 testData->crc_failed++;
+            }
         }
 
         set_gpio_mode(TX_MODE);
