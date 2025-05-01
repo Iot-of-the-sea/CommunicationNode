@@ -365,14 +365,26 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     else
     {
         err = getHeaderByte(response, headerByte);
-        if (!err && headerByte == HEADER_DATA && response.size() >= 7)
+        if (err)
         {
-            uint16_t nodeId = (uint8_t)response.at(0) | ((uint8_t)response.at(1) << 4);
+            cout << "error" << endl;
+        }
+        else if ((headerByte & 0x7F) != HEADER_DATA)
+        {
+            cout << "bad header byte" << endl;
+        }
+        else if (response.size() >= 8)
+        {
+            cout << "too big: " << response.size() << " ; " << response << endl;
+        }
+        if (!err && (headerByte & 0x7F) == HEADER_DATA && response.size() < 8)
+        {
+            uint16_t nodeId = (uint8_t)response.at(1) | ((uint8_t)response.at(2) << 4);
             cout << "Node ID: " << (unsigned char)nodeId << endl;
             uint32_t fileSize = 0;
             for (size_t i = 0; i < 4; i++)
             {
-                fileSize |= (uint8_t)response.at(2 + i) << (4 * i);
+                fileSize |= (uint8_t)response.at(3 + i) << (4 * i);
             }
             cout << "File Size: " << (unsigned char)fileSize << endl;
 
