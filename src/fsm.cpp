@@ -173,11 +173,35 @@ void SendRTSState::handle(NodeFSM &fsm)
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
-    listen(response);
-    if (isAck(response))
+    uint32_t fileSize = getFileSize("./lib/test.txt");
+    headerData header = {NODE_ID, fileSize};
+    err = packetFromHeaderData(packet, header);
+    if (!err)
     {
-        cout << "to stage send data start" << endl;
-        fsm.changeState(std::make_unique<SendDataStartState>());
+        transmit_data(audioTx, DATA_MODE, HEADER_DATA,
+                      packet.data(), packet.size());
+
+        timeout.setDuration(5000000);
+
+        err = listen(response, &timeout);
+
+        cout << (unsigned int)fsm.getCount() << endl;
+        if (fsm.getCount() >= 10) // simplify this control logic somehow
+        {
+            cout << "return to send rts state" << endl;
+            fsm.changeState(std::make_unique<SendRTSState>());
+        }
+        else if (err)
+        {
+            if (err == TIMEOUT_ERROR)
+                fsm.incrCount();
+            cout << "stay in send header stage" << endl;
+        }
+        else if (!err && isAck(response))
+        {
+            cout << "to stage send data start" << endl;
+            fsm.changeState(std::make_unique<SendDataStartState>());
+        }
     }
     else
     {
@@ -330,20 +354,43 @@ void ReadRTSState::handle(NodeFSM &fsm)
 
 void ReadHeaderState::handle(NodeFSM &fsm)
 {
-    cout << "valid? (y/n) ";
-    cin >> response;
+    timeout.setDuration(5000000);
 
-    if (response == "y")
+    err = listen(response, &timeout);
+    if (err == TIMEOUT_ERROR)
     {
-        transmit_data(audioTx, CTRL_MODE, ACK);
-        cout << "to stage read data start" << endl;
-        fsm.changeState(std::make_unique<ReadDataStartState>());
+        cout << "revert to read rts stage" << endl;
+        fsm.changeState(std::make_unique<ReadRTSState>());
     }
     else
     {
-        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-        cout << "stay in read header" << endl;
+        err = getHeaderByte(response, headerByte);
+        if (!err && headerByte == HEADER_DATA && response.size() >= 7)
+        {
+            uint16_t nodeId = (uint8_t)response.at(0) | ((uint8_t)response.at(1) << 4);
+            cout << "Node ID: " << (unsigned char)nodeId << endl;
+            uint32_t fileSize = 0;
+            for (size_t i = 0; i < 4; i++)
+            {
+                fileSize |= (uint8_t)response.at(2 + i) << (4 * i);
+            }
+            cout << "File Size: " << (unsigned char)fileSize << endl;
+
+            transmit_data(audioTx, CTRL_MODE, ACK);
+            cout << "to stage read data start" << endl;
+            fsm.changeState(std::make_unique<ReadDataStartState>());
+        }
+        else
+        {
+            cout << "stay in read header" << endl;
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+        }
     }
+    // else
+    // {
+    //     transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+    //     cout << "stay in read header" << endl;
+    // }
 }
 
 void ReadDataStartState::handle(NodeFSM &fsm)
