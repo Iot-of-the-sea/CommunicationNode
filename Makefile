@@ -9,9 +9,9 @@ BUILD = build
 # PA = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio
 PA = -L/usr/lib/aarch64-linux-gnu -lportaudio -lasound -lm -lpthread
 
-SRC_DIRS := src lib lib/audio lib/audio/audiorx lib/timeout lib/file_transfer # tst/testlib
-TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer # tst/testlib
-RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer # tst/testlib
+SRC_DIRS := src lib lib/audio lib/audio/audiorx lib/timeout lib/file_transfer lib/gpio # tst/testlib
+TX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_tx_tests lib/timeout lib/file_transfer lib/gpio
+RX_TST_DIRS := lib lib/audio lib/audio/audiorx tst/file_rx_tests lib/timeout lib/file_transfer lib/gpio
 
 TARGET_DIRS = $(SRC_DIRS)
 BUILD_DIRS := $(addprefix $(BUILD)/, $(TARGET_DIRS))
@@ -25,7 +25,7 @@ all: program
 debug: debug_program
 
 program: $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) -o run $(PA) -pthread
+	$(CC) $(CFLAGS) $(OBJ) -o run $(PA) -pthread -lgpiod
 
 $(OBJ): | $(BUILD_DIRS)
 
@@ -41,6 +41,9 @@ $(BUILD_DIRS):
 debug_program: $(BUILD)/lib/audio/audiotransmitter.o $(BUILD)/data.o $(BUILD)/control.o $(SRC)/fsm.cpp $(SRC)/fsm.h
 	$(CC) $(CFLAGS) -o program $(SRC)/fsm.cpp $(BUILD)/audiotransmitter.o $(BUILD)/audioprofile.o $(BUILD)/data.o $(PA)
 
+
+gpio: lib/gpio/gpio.cpp
+	$(CC) $(CFLAGS) -o $(TST)/gpio_test lib/gpio/gpio.cpp -lgpiod
 
 data: data.o
 	$(CC) $(CFLAGS) -o $(BUILD)/data $(BUILD)/data.o
@@ -61,7 +64,7 @@ timeout_test: unity.o $(TST)/timeout_tests.cpp
 # file_rx_test: TARGET_DIRS := $(RX_TST_DIRS)
 
 file_tx_test file_rx_test: $(OBJ)
-	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread
+	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread -lgpiod
 
 # file_tx_test: $(OBJ)
 # 	$(CC) $(CFLAGS) -o $(TST)/$@ $^ $(PA) -pthread

@@ -13,6 +13,7 @@
 #define IO_ERROR 0x04
 #define ARGUMENT_ERROR 0x05
 #define MEMORY_ERROR 0x06
+#define GPIO_ERROR 0x07
 
 using namespace std;
 

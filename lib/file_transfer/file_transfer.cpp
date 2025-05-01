@@ -128,10 +128,13 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
         chunkStr = chunks.at(frameNum);
         chunkLen = chunkStr.length();
         memcpy(frameBuf, chunkStr.data(), chunkLen);
-        cout << "transmit: " << (unsigned int)frameNum << " " << chunkStr << endl;
+        cout << "transmit: " << (unsigned int)frameNum << endl;
+
+        set_gpio_mode(TX_MODE);
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
         testData->sent++;
 
+        set_gpio_mode(RX_MODE);
         err = listen(response, &timeout);
         if (err == TIMEOUT_ERROR)
             testData->timeouts++;
@@ -178,8 +181,10 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
     FileWriter file("./tst/testFile.txt");
     file.open();
-    while (headerByte != DATA_DONE && counter < maxTries)
+    // while (headerByte != DATA_DONE && counter < maxTries)
+    while (headerByte != DATA_DONE)
     {
+        set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
         if (err == TIMEOUT_ERROR)
         {
@@ -188,10 +193,13 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         else
         {
             testData->received++;
-            if (!check_received_crc(result))
+            if (!err && !check_received_crc(result))
+            {
                 testData->crc_failed++;
+            }
         }
 
+        set_gpio_mode(TX_MODE);
         if (!err && check_received_crc(result))
         {
             getHeaderByte(result, headerByte);
@@ -204,11 +212,13 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
             last_rx_data = rx_data;
             lastHeader = headerByte;
+            set_gpio_mode(TX_MODE);
             transmit_data(tx, CTRL_MODE, ACK);
             counter = 0;
         }
         else
         {
+            set_gpio_mode(TX_MODE);
             transmit_data(tx, CTRL_MODE, NAK_SEND);
             counter++;
         }

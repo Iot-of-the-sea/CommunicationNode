@@ -21,7 +21,7 @@ bool checkFileMatch(string fileName, string expectedStr)
 void setUp() {} // Runs before each test
 void tearDown()
 {
-    // remove(TEST_FILE_NAME);
+    remove(TEST_FILE_NAME);
 } // Runs after each test
 
 void packFrame_shouldPopulateSignal_fromEmpty()
@@ -68,13 +68,13 @@ void packFrame_shouldPopulateSignal_fromPacked()
     testFrame.data[0] = 127;
     testFrame.data[1] = 250;
     testFrame.data[5] = 100;
+    testFrame.data_len = 6;
     packFrame(emptySignal, testFrame);
 
     TEST_ASSERT_FALSE(err);
 
     TEST_ASSERT_GREATER_THAN(0, emptySignal.size());
-    TEST_ASSERT_EQUAL(33, emptySignal.size());
-
+    TEST_ASSERT_EQUAL(7, emptySignal.size());
     TEST_ASSERT_EQUAL(0b10001011, emptySignal.at(0));
     TEST_ASSERT_EQUAL(127, emptySignal.at(1));
     TEST_ASSERT_EQUAL(250, emptySignal.at(2));
@@ -82,6 +82,7 @@ void packFrame_shouldPopulateSignal_fromPacked()
 
     testFrame.mode = DATA_MODE;
     testFrame.header = 0b00101111;
+    testFrame.data_len = 32;
     testFrame.data[1] = 222;
     testFrame.data[2] = 10;
     testFrame.data[6] = 0;
@@ -126,7 +127,7 @@ void packFrame_shouldPopulateSignal_withDefaultFrame()
     TEST_ASSERT_FALSE(err);
 
     TEST_ASSERT_GREATER_THAN(0, emptySignal.size());
-    TEST_ASSERT_EQUAL(1, emptySignal.size()); // TODO: change when optimize for size
+    TEST_ASSERT_EQUAL(0, emptySignal.size()); // TODO: change when optimize for size
 
     TEST_ASSERT_EQUAL(0, emptySignal.at(0));
 }
@@ -226,6 +227,7 @@ void packetFromFrame_givenValidDataFrame_shouldMakeValidPacket()
     frame testFrame = {
         .mode = DATA_MODE,
         .header = 0X21,
+        .data_len = 32,
         .data = {0X61, 0X62, 0X63, 0X64, 0X65, 0X66, 0X67, 0X68,
                  0X69, 0X6A, 0X6B, 0X6C, 0X6E, 0X6D, 0X6F, 0X70,
                  0X71, 0X72, 0X73, 0X74, 0X75, 0X76, 0X77, 0X78,
@@ -402,6 +404,50 @@ void write_uint8Arr_and_openStream_returnsNoError()
     TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
 }
 
+void frameFromHeaderData_givenEmptyHeader_givesZeroData()
+{
+    frame testFrame;
+    headerData testData;
+    uint8_t err = frameFromHeaderData(testFrame, testData);
+
+    TEST_ASSERT_EQUAL_UINT8(NO_ERROR, err);
+    TEST_ASSERT_EQUAL_UINT8(0x00, testFrame.data[0]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, testFrame.data[1]);
+
+    TEST_ASSERT_EQUAL_UINT8(0x00, testFrame.data[2]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, testFrame.data[3]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, testFrame.data[4]);
+    TEST_ASSERT_EQUAL_UINT8(0x00, testFrame.data[5]);
+}
+
+void frameFromHeaderData_givenFullHeader_returnsArgError()
+{
+    frame testFrame;
+    headerData testData = {0xAB12, 0x12345678};
+    uint8_t err = frameFromHeaderData(testFrame, testData);
+
+    TEST_ASSERT_EQUAL_UINT8(NO_ERROR, err);
+    TEST_ASSERT_EQUAL_UINT8(0x12, testFrame.data[0]);
+    TEST_ASSERT_EQUAL_UINT8(0xab, testFrame.data[1]);
+
+    TEST_ASSERT_EQUAL_UINT8(0x78, testFrame.data[2]);
+    TEST_ASSERT_EQUAL_UINT8(0x56, testFrame.data[3]);
+    TEST_ASSERT_EQUAL_UINT8(0x34, testFrame.data[4]);
+    TEST_ASSERT_EQUAL_UINT8(0x12, testFrame.data[5]);
+}
+
+void getFileSize_givenFiles_returnsSize()
+{
+    uint32_t size = getFileSize("./tst/testfiles/32bytes.txt");
+    TEST_ASSERT_EQUAL_UINT32(32, size);
+
+    size = getFileSize("./tst/testfiles/1kB.txt");
+    TEST_ASSERT_EQUAL_UINT32(1024, size);
+
+    size = getFileSize("./tst/testfiles/empty.txt");
+    TEST_ASSERT_EQUAL_UINT32(0, size);
+}
+
 int main()
 {
     UNITY_BEGIN();
@@ -441,35 +487,10 @@ int main()
     RUN_TEST(write_givenString_and_openStream_returnsNoError);
     RUN_TEST(write_uint8Arr_and_openStream_returnsNoError);
 
+    RUN_TEST(frameFromHeaderData_givenEmptyHeader_givesZeroData);
+    RUN_TEST(frameFromHeaderData_givenFullHeader_returnsArgError);
+
+    RUN_TEST(getFileSize_givenFiles_returnsSize);
+
     return UNITY_END();
 }
-
-// int test()
-// {
-//     std::ifstream ifile("./lib/01102521.csv", std::ifstream::binary); // Open the file
-//     std::ofstream ofile("./lib/out.txt", std::ifstream::binary);
-
-//     if (!(ifile && ofile))
-//     {
-//         std::cerr << "Error opening file!" << std::endl;
-//         return 1;
-//     }
-
-//     char *frameBuf = new char[FRAME_SIZE_BYTES];
-//     frame dataFrame = {
-//         .mode = DATA_MODE,
-//         .header = 0,
-//         .data = {}};
-//     while (ifile.read(frameBuf, FRAME_SIZE_BYTES))
-//     {
-//         std::memcpy(dataFrame.data, reinterpret_cast<uint8_t *>(frameBuf), FRAME_SIZE_BYTES);
-//         printFrame(dataFrame);
-//         ofile.write(frameBuf, FRAME_SIZE_BYTES);
-//         dataFrame.header++;
-//     }
-//     ofile.write(frameBuf, ifile.gcount());
-
-//     ifile.close(); // Close the file
-//     ofile.close(); // Close the file
-//     return 0;
-// }

@@ -2,6 +2,7 @@
 #ifndef __DATA__
 #define __DATA__
 
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -41,5 +42,7 @@ crc_t find_crc(string &packet);
 crc_t find_crc(vector<uint8_t> &packet);
 uint8_t check_received_crc(string packet);
 uint8_t get_packet_data(string &packet, string &data);
+
+uint32_t getFileSize(const char *fileName);
 
 #endif // __DATA__

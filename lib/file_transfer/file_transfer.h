@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "../audio/audiotransmitter.h"
 #include "../audio/audiorx/audioreceiver.h"
+#include "../gpio/gpio.h"
 #include "../timeout/timeout.h"
 
 #if DEPLOYED
