@@ -181,7 +181,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
         transmit_data(audioTx, DATA_MODE, HEADER_DATA,
                       packet.data(), packet.size());
 
-        timeout.setDuration(5000000);
+        timeout.setDuration(1000000);
 
         err = listen(response, &timeout);
 
@@ -398,11 +398,6 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
         }
     }
-    // else
-    // {
-    //     transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-    //     cout << "stay in read header" << endl;
-    // }
 }
 
 void ReadDataStartState::handle(NodeFSM &fsm)
