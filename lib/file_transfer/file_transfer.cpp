@@ -134,20 +134,19 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
         testData->sent++;
 
-        // set_gpio_mode(RX_MODE);
-        // err = listen(response, &timeout);
-        // if (err == TIMEOUT_ERROR)
-        //     testData->timeouts++;
-        // else
-        // {
-        //     if (isAck(response))
-        //         testData->ack++;
-        //     else
-        //         testData->nak++;
-        // }
+        set_gpio_mode(RX_MODE);
+        err = listen(response, &timeout);
+        if (err == TIMEOUT_ERROR)
+            testData->timeouts++;
+        else
+        {
+            if (isAck(response))
+                testData->ack++;
+            else
+                testData->nak++;
+        }
 
-        // if (!err && isAck(response))
-        if (true)
+        if (!err && isAck(response))
         {
             cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
             frameNum++;
