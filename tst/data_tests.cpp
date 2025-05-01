@@ -21,7 +21,7 @@ bool checkFileMatch(string fileName, string expectedStr)
 void setUp() {} // Runs before each test
 void tearDown()
 {
-    // remove(TEST_FILE_NAME);
+    remove(TEST_FILE_NAME);
 } // Runs after each test
 
 void packFrame_shouldPopulateSignal_fromEmpty()
