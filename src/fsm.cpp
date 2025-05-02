@@ -9,8 +9,8 @@ uint8_t headerByte, err;
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 TimeoutHandler timeout(1000000);
 
-SendCtrlState SendRTSState(
-    RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>());
+unique_ptr<NodeState> SendRTSState = make_unique<NodeState>(SendCtrlState(
+    RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>()));
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
@@ -31,7 +31,7 @@ int runFSM(bool rovMode)
     return 0;
 }
 
-void SendCtrlState::handle(Node &fsm)
+void SendCtrlState::handle(NodeFSM &fsm)
 {
     transmit_data(audioTx, CTRL_MODE, _transmit_code);
 
@@ -41,7 +41,7 @@ void SendCtrlState::handle(Node &fsm)
     if (fsm.getCount() >= _maxTries) // simplify this control logic somehow
     {
         cout << "to fail state" << endl;
-        fsm.changeState(_failState);
+        fsm.changeState(move(_failState));
         return;
     }
 
@@ -51,7 +51,7 @@ void SendCtrlState::handle(Node &fsm)
     if (!err && headerByte == _expected_receive)
     {
         cout << "to next state" << endl;
-        fsm.changeState(_nextState);
+        fsm.changeState(move(_nextState));
         return;
     }
 
@@ -160,7 +160,7 @@ void SendIDState::handle(NodeFSM &fsm)
     {
         cout << "to stage send rts" << endl;
         // fsm.changeState(std::make_unique<SendRTSState>());
-        fsm.changeState(SendRTSState);
+        fsm.changeState(move(SendRTSState));
     }
     else
     {
@@ -220,7 +220,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
             cout << "return to send rts state" << endl;
-            fsm.changeState(SendRTSState);
+            fsm.changeState(move(SendRTSState));
         }
         else if (err)
         {
@@ -535,7 +535,7 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
                 if (response == "y")
                 {
                     cout << "to stage send rts" << endl;
-                    fsm.changeState(SendRTSState);
+                    fsm.changeState(move(SendRTSState));
                 }
                 else
                 {
