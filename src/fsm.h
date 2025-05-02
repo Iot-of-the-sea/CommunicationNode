@@ -41,6 +41,26 @@ public:
     virtual ~NodeState() = default;
 };
 
+class SendCtrlState : public NodeState
+{
+private:
+    uint8_t _transmit_code;
+    uint8_t _expected_receive;
+    NodeState _nextState;
+    NodeState _failState;
+    uint32_t _timeout_us;
+    uint16_t _maxTries;
+
+public:
+    SendCtrlState(uint8_t transmit_code, uint8_t expected_receive,
+                  NodeState next, NodeState fail, uint32_t timeout_us = 1000000,
+                  uint16_t maxTries = 10)
+        : _transmit_code(transmit_code), _expected_receive(expected_receive), _nextState(next),
+          _failState(fail), _timeout_us(timeout_us), _maxTries(maxTries) {};
+
+    void handle(NodeFSM &fsm) override;
+}
+
 // Concrete states
 class IdleState : public NodeState
 {
@@ -103,6 +123,12 @@ class SendIDState : public NodeState
 public:
     void handle(NodeFSM &fsm) override;
 };
+
+// class SendRTSState : public NodeState
+// {
+// public:
+//     void handle(NodeFSM &fsm) override;
+// };
 
 class SendRTSState : public NodeState
 {

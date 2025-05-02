@@ -9,6 +9,9 @@ uint8_t headerByte, err;
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 TimeoutHandler timeout(1000000);
 
+SendCtrlState SendRTSState(
+    RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>());
+
 frame nodeFrame = {
     .mode = CTRL_MODE,
     .header = 0,
@@ -26,6 +29,33 @@ int runFSM(bool rovMode)
         node.update(); // Runs FSM indefinitely
     }
     return 0;
+}
+
+void SendCtrlState::handle(Node &fsm)
+{
+    transmit_data(audioTx, CTRL_MODE, _transmit_code);
+
+    timeout.setDuration(_timeout_us);
+    err = listen(response, &timeout);
+
+    if (fsm.getCount() >= _maxTries) // simplify this control logic somehow
+    {
+        cout << "to fail state" << endl;
+        fsm.changeState(_failState);
+        return;
+    }
+
+    if (!err)
+        err = getHeaderByte(response, headerByte);
+
+    if (!err && headerByte == _expected_receive)
+    {
+        cout << "to next state" << endl;
+        fsm.changeState(_nextState);
+        return;
+    }
+
+    fsm.incrCount();
 }
 
 // Implement state transitions
@@ -129,7 +159,8 @@ void SendIDState::handle(NodeFSM &fsm)
     else if (!err && isAck(response))
     {
         cout << "to stage send rts" << endl;
-        fsm.changeState(std::make_unique<SendRTSState>());
+        // fsm.changeState(std::make_unique<SendRTSState>());
+        fsm.changeState(SendRTSState);
     }
     else
     {
@@ -137,39 +168,39 @@ void SendIDState::handle(NodeFSM &fsm)
     }
 }
 
-void SendRTSState::handle(NodeFSM &fsm)
-{
-    transmit_data(audioTx, CTRL_MODE, RTS);
+// void SendRTSState::handle(NodeFSM &fsm)
+// {
+//     transmit_data(audioTx, CTRL_MODE, RTS);
 
-    // listen(response, string(1, static_cast<char>(CTS)));
-    err = listen(response, &timeout);
+//     // listen(response, string(1, static_cast<char>(CTS)));
+//     err = listen(response, &timeout);
 
-    cout << (unsigned int)fsm.getCount() << endl;
-    if (fsm.getCount() >= 10) // simplify this control logic somehow
-    {
-        cout << "return to idle state" << endl;
-        fsm.changeState(std::make_unique<IdleState>());
-    }
-    else if (err == TIMEOUT_ERROR)
-    {
-        fsm.incrCount();
-        cout << "stay in send rts" << endl;
-    }
-    else
-    {
-        err = getHeaderByte(response, headerByte);
-        if (!err && headerByte == CTS)
-        {
-            cout << "to stage send header" << endl;
-            fsm.changeState(std::make_unique<SendHeaderState>());
-        }
-        else
-        {
-            fsm.incrCount();
-            cout << "stay in send rts" << endl;
-        }
-    }
-}
+//     cout << (unsigned int)fsm.getCount() << endl;
+//     if (fsm.getCount() >= 10) // simplify this control logic somehow
+//     {
+//         cout << "return to idle state" << endl;
+//         fsm.changeState(std::make_unique<IdleState>());
+//     }
+//     else if (err == TIMEOUT_ERROR)
+//     {
+//         fsm.incrCount();
+//         cout << "stay in send rts" << endl;
+//     }
+//     else
+//     {
+//         err = getHeaderByte(response, headerByte);
+//         if (!err && headerByte == CTS)
+//         {
+//             cout << "to stage send header" << endl;
+//             fsm.changeState(std::make_unique<SendHeaderState>());
+//         }
+//         else
+//         {
+//             fsm.incrCount();
+//             cout << "stay in send rts" << endl;
+//         }
+//     }
+// }
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
@@ -189,7 +220,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
             cout << "return to send rts state" << endl;
-            fsm.changeState(std::make_unique<SendRTSState>());
+            fsm.changeState(SendRTSState);
         }
         else if (err)
         {
@@ -504,7 +535,7 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
                 if (response == "y")
                 {
                     cout << "to stage send rts" << endl;
-                    fsm.changeState(std::make_unique<SendRTSState>());
+                    fsm.changeState(SendRTSState);
                 }
                 else
                 {
