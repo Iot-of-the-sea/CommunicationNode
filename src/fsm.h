@@ -111,6 +111,7 @@ public:
 
     void changeState(std::unique_ptr<NodeState> newState)
     {
+        cout << "new state" << endl;
         _counter = 0;
         _state = std::move(newState);
     }

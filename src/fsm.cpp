@@ -152,6 +152,7 @@ void CalibrateState::handle(NodeFSM &fsm)
     }
     else
     {
+        timeout.setDuration(5000000);
         err = listen(response, &timeout);
         if (isAck(response))
         {
@@ -240,7 +241,8 @@ unique_ptr<NodeState> createSendDataDoneState()
 {
     return make_unique<SendState>(
         DATA_DONE, ACK, CTRL_MODE,
-        std::make_unique<EchoConfirmationState>(),
+        // std::make_unique<EchoConfirmationState>(), TODO: change this back
+        createSendEOTState(),
         std::make_unique<IdleState>());
 }
 
