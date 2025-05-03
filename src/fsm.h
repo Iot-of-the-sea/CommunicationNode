@@ -63,6 +63,27 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
+class ReadState : public NodeState
+{
+private:
+    uint8_t _expected_receive;
+    uint8_t _transmit_code;
+    std::unique_ptr<NodeState> _nextState;
+    std::unique_ptr<NodeState> _failState;
+    bool _send_nak;
+    uint32_t _timeout_us;
+
+public:
+    ReadState(uint8_t expected_receive, uint8_t transmit_code,
+              std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
+              bool send_nak = true, uint32_t timeout_us = 5000000)
+        : _expected_receive(expected_receive), _transmit_code(transmit_code),
+          _nextState(move(next)), _failState(move(fail)), _send_nak(send_nak),
+          _timeout_us(timeout_us) {};
+
+    void handle(NodeFSM &fsm) override;
+};
+
 // Concrete states
 class IdleState : public NodeState
 {
@@ -152,11 +173,12 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class ReadIDState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createReadIDState();
+// class ReadIDState : public NodeState
+// {
+// public:
+//     void handle(NodeFSM &fsm) override;
+// };
 
 class ReadConfirmationState : public NodeState
 {
