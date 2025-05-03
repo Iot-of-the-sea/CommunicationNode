@@ -56,8 +56,9 @@ public:
     SendState(uint8_t transmit_code, uint8_t expected_receive, uint8_t mode,
               std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
               uint32_t timeout_us = 1000000, uint16_t maxTries = 10)
-        : _transmit_code(transmit_code), _expected_receive(expected_receive), _nextState(move(next)),
-          _failState(move(fail)), _timeout_us(timeout_us), _maxTries(maxTries) {};
+        : _transmit_code(transmit_code), _expected_receive(expected_receive), _mode(mode),
+          _nextState(move(next)), _failState(move(fail)), _timeout_us(timeout_us),
+          _maxTries(maxTries) {};
 
     void handle(NodeFSM &fsm) override;
 };
@@ -119,23 +120,9 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class SendIDState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendIDState();
 
-// class SendRTSState : public NodeState
-// {
-// public:
-//     void handle(NodeFSM &fsm) override;
-// };
-
-class SendRTSState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendRTSState();
 
 class SendHeaderState : public NodeState
 {
@@ -143,11 +130,13 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class SendDataStartState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendDataStartState();
+
+// class SendDataStartState : public NodeState
+// {
+// public:
+//     void handle(NodeFSM &fsm) override;
+// };
 
 class SendDataFrameState : public NodeState
 {

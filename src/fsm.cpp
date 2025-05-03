@@ -9,25 +9,6 @@ uint8_t headerByte, err;
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 TimeoutHandler timeout(1000000);
 
-// unique_ptr<NodeState> SendRTSState = make_unique<NodeState>(SendCtrlState(
-//     RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>()));
-
-unique_ptr<NodeState> createSendRTSState()
-{
-    return make_unique<SendState>(
-        RTS, CTS, CTRL_MODE,
-        std::make_unique<SendHeaderState>(),
-        std::make_unique<IdleState>());
-}
-
-unique_ptr<NodeState> createSendIDState()
-{
-    return make_unique<SendState>(
-        NODE_ID, ACK, DATA_MODE,
-        createSendRTSState(),
-        std::make_unique<CalibrateState>());
-}
-
 frame nodeFrame = {
     .mode = CTRL_MODE,
     .header = 0,
@@ -49,12 +30,12 @@ int runFSM(bool rovMode)
 
 void SendState::handle(NodeFSM &fsm)
 {
-    transmit_data(audioTx, CTRL_MODE, _transmit_code);
+    transmit_data(audioTx, _mode, _transmit_code);
 
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
-    if (fsm.getCount() >= _maxTries) // simplify this control logic somehow
+    if (fsm.getCount() >= _maxTries)
     {
         cout << "to fail state" << endl;
         fsm.changeState(move(_failState));
@@ -156,67 +137,29 @@ void CalibrateState::handle(NodeFSM &fsm)
     }
 }
 
-// void SendIDState::handle(NodeFSM &fsm)
-// {
-//     transmit_data(audioTx, DATA_MODE, NODE_ID);
+unique_ptr<NodeState> createSendIDState()
+{
+    return make_unique<SendState>(
+        NODE_ID, ACK, DATA_MODE,
+        createSendRTSState(),
+        std::make_unique<CalibrateState>());
+}
 
-//     err = listen(response, &timeout);
-//     cout << (unsigned int)fsm.getCount() << endl;
-//     if (fsm.getCount() >= 10)
-//     {
-//         cout << "revert to calibrate stage" << endl;
-//         fsm.changeState(std::make_unique<CalibrateState>());
-//     }
-//     else if (err == TIMEOUT_ERROR)
-//     {
-//         fsm.incrCount();
-//         cout << "stay in send id" << endl;
-//     }
-//     else if (!err && isAck(response))
-//     {
-//         cout << "to stage send rts" << endl;
-//         // fsm.changeState(std::make_unique<SendRTSState>());
-//         fsm.changeState(createSendRTSState());
-//     }
-//     else
-//     {
-//         cout << "stay in send id" << endl;
-//     }
-// }
+unique_ptr<NodeState> createSendRTSState()
+{
+    return make_unique<SendState>(
+        RTS, CTS, CTRL_MODE,
+        std::make_unique<SendHeaderState>(),
+        std::make_unique<IdleState>());
+}
 
-// void SendRTSState::handle(NodeFSM &fsm)
-// {
-//     transmit_data(audioTx, CTRL_MODE, RTS);
-
-//     // listen(response, string(1, static_cast<char>(CTS)));
-//     err = listen(response, &timeout);
-
-//     cout << (unsigned int)fsm.getCount() << endl;
-//     if (fsm.getCount() >= 10) // simplify this control logic somehow
-//     {
-//         cout << "return to idle state" << endl;
-//         fsm.changeState(std::make_unique<IdleState>());
-//     }
-//     else if (err == TIMEOUT_ERROR)
-//     {
-//         fsm.incrCount();
-//         cout << "stay in send rts" << endl;
-//     }
-//     else
-//     {
-//         err = getHeaderByte(response, headerByte);
-//         if (!err && headerByte == CTS)
-//         {
-//             cout << "to stage send header" << endl;
-//             fsm.changeState(std::make_unique<SendHeaderState>());
-//         }
-//         else
-//         {
-//             fsm.incrCount();
-//             cout << "stay in send rts" << endl;
-//         }
-//     }
-// }
+unique_ptr<NodeState> createSendDataStartState()
+{
+    return make_unique<SendState>(
+        DATA_START, ACK, CTRL_MODE,
+        std::make_unique<SendDataFrameState>(),
+        std::make_unique<SendHeaderState>());
+}
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
@@ -247,28 +190,12 @@ void SendHeaderState::handle(NodeFSM &fsm)
         else if (!err && isAck(response))
         {
             cout << "to stage send data start" << endl;
-            fsm.changeState(std::make_unique<SendDataStartState>());
+            fsm.changeState(createSendDataStartState());
         }
     }
     else
     {
         cout << "stay in send header" << endl;
-    }
-}
-
-void SendDataStartState::handle(NodeFSM &fsm)
-{
-    transmit_data(audioTx, CTRL_MODE, DATA_START);
-
-    listen(response);
-    if (isAck(response))
-    {
-        cout << "to stage send data" << endl;
-        fsm.changeState(std::make_unique<SendDataFrameState>());
-    }
-    else
-    {
-        cout << "stay in send data start" << endl;
     }
 }
 
