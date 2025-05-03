@@ -72,7 +72,7 @@ void ReadState::handle(NodeFSM &fsm)
         {
             transmit_data(audioTx, CTRL_MODE, _transmit_code);
             cout << "to next state" << endl;
-            fsm.changeState(std::make_unique<ReadRTSState>());
+            fsm.changeState(move(_nextState));
         }
         else
         {
@@ -284,7 +284,7 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
                 if (response == "y")
                 {
                     cout << "to stage read rts" << endl;
-                    fsm.changeState(std::make_unique<ReadRTSState>());
+                    fsm.changeState(createReadRTSState());
                 }
                 else
                 {
@@ -308,64 +308,16 @@ unique_ptr<NodeState> createReadIDState()
 {
     return make_unique<ReadState>(
         (NODE_ID | 0x80), ACK,
-        make_unique<ReadRTSState>(),
+        createReadRTSState(),
         make_unique<CalibrateState>());
 }
 
-// void ReadIDState::handle(NodeFSM &fsm)
-// {
-
-//     timeout.setDuration(5000000);
-//     err = listen(response, &timeout);
-
-//     if (err == TIMEOUT_ERROR)
-//     {
-//         cout << "revert to calibrate stage" << endl;
-//         fsm.changeState(std::make_unique<CalibrateState>());
-//     }
-//     else
-//     {
-//         err = getHeaderByte(response, headerByte);
-//         if (!err && headerByte == 0xA4)
-//         {
-//             transmit_data(audioTx, CTRL_MODE, ACK);
-//             cout << "to stage read rts" << endl;
-//             fsm.changeState(std::make_unique<ReadRTSState>());
-//         }
-//         else
-//         {
-//             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-//             cout << "stay in read id (count: " << (unsigned int)fsm.getCount() << ")" << endl;
-//             fsm.incrCount();
-//         }
-//     }
-// }
-
-void ReadRTSState::handle(NodeFSM &fsm)
+unique_ptr<NodeState> createReadRTSState()
 {
-    // listen(response, string(1, static_cast<char>(RTS)));
-    timeout.setDuration(5000000);
-
-    err = listen(response, &timeout);
-    if (err == TIMEOUT_ERROR)
-    {
-        cout << "revert to idle stage" << endl;
-        fsm.changeState(std::make_unique<IdleState>());
-    }
-    else
-    {
-        err = getHeaderByte(response, headerByte);
-        if (!err && headerByte == RTS)
-        {
-            transmit_data(audioTx, CTRL_MODE, CTS);
-            cout << "to stage read header" << endl;
-            fsm.changeState(std::make_unique<ReadHeaderState>());
-        }
-        else
-        {
-            cout << "stay in read rts" << endl;
-        }
-    }
+    return make_unique<ReadState>(
+        RTS, CTS,
+        make_unique<ReadHeaderState>(),
+        make_unique<IdleState>());
 }
 
 void ReadHeaderState::handle(NodeFSM &fsm)
@@ -376,7 +328,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     if (err == TIMEOUT_ERROR)
     {
         cout << "revert to read rts stage" << endl;
-        fsm.changeState(std::make_unique<ReadRTSState>());
+        fsm.changeState(createReadRTSState());
     }
     else
     {

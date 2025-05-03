@@ -174,19 +174,15 @@ public:
 };
 
 unique_ptr<NodeState> createReadIDState();
-// class ReadIDState : public NodeState
+
+unique_ptr<NodeState> createReadRTSState();
+// class ReadRTSState : public NodeState
 // {
 // public:
 //     void handle(NodeFSM &fsm) override;
 // };
 
 class ReadConfirmationState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
-
-class ReadRTSState : public NodeState
 {
 public:
     void handle(NodeFSM &fsm) override;
