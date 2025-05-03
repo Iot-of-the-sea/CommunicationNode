@@ -9,8 +9,16 @@ uint8_t headerByte, err;
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 TimeoutHandler timeout(1000000);
 
-unique_ptr<NodeState> SendRTSState = make_unique<NodeState>(SendCtrlState(
-    RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>()));
+// unique_ptr<NodeState> SendRTSState = make_unique<NodeState>(SendCtrlState(
+//     RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>()));
+
+unique_ptr<NodeState> createSendRTSState() {
+    return std::make_unique<SendCtrlState>(
+        RTS, CTS,
+        std::make_unique<SendHeaderState>(),
+        std::make_unique<IdleState>()
+    );
+}
 
 frame nodeFrame = {
     .mode = CTRL_MODE,
@@ -160,7 +168,7 @@ void SendIDState::handle(NodeFSM &fsm)
     {
         cout << "to stage send rts" << endl;
         // fsm.changeState(std::make_unique<SendRTSState>());
-        fsm.changeState(move(SendRTSState));
+        fsm.changeState(createSendRTSState());
     }
     else
     {
@@ -220,7 +228,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
             cout << "return to send rts state" << endl;
-            fsm.changeState(move(SendRTSState));
+            fsm.changeState(createSendRTSState());
         }
         else if (err)
         {
@@ -535,7 +543,7 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
                 if (response == "y")
                 {
                     cout << "to stage send rts" << endl;
-                    fsm.changeState(move(SendRTSState));
+                    fsm.changeState(createSendRTSState());
                 }
                 else
                 {
