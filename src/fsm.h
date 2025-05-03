@@ -132,23 +132,13 @@ public:
 
 unique_ptr<NodeState> createSendDataStartState();
 
-// class SendDataStartState : public NodeState
-// {
-// public:
-//     void handle(NodeFSM &fsm) override;
-// };
-
 class SendDataFrameState : public NodeState
 {
 public:
     void handle(NodeFSM &fsm) override;
 };
 
-class SendDataDoneState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendDataDoneState();
 
 class SendEOTState : public NodeState
 {

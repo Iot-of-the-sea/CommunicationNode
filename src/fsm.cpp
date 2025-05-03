@@ -153,14 +153,6 @@ unique_ptr<NodeState> createSendRTSState()
         std::make_unique<IdleState>());
 }
 
-unique_ptr<NodeState> createSendDataStartState()
-{
-    return make_unique<SendState>(
-        DATA_START, ACK, CTRL_MODE,
-        std::make_unique<SendDataFrameState>(),
-        std::make_unique<SendHeaderState>());
-}
-
 void SendHeaderState::handle(NodeFSM &fsm)
 {
     uint32_t fileSize = getFileSize("./lib/test.txt");
@@ -199,13 +191,29 @@ void SendHeaderState::handle(NodeFSM &fsm)
     }
 }
 
+unique_ptr<NodeState> createSendDataStartState()
+{
+    return make_unique<SendState>(
+        DATA_START, ACK, CTRL_MODE,
+        std::make_unique<SendDataFrameState>(),
+        std::make_unique<SendHeaderState>());
+}
+
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
     cout << "State: SEND DATA FRAME" << endl;
-    transmit_file(audioTx, "./lib/test.txt", timeout);
+    // transmit_file(audioTx, "./lib/test.txt", timeout);
 
     cout << "to stage echo confirmation" << endl;
-    fsm.changeState(std::make_unique<SendDataDoneState>());
+    fsm.changeState(createSendDataDoneState());
+}
+
+unique_ptr<NodeState> createSendDataDoneState()
+{
+    return make_unique<SendState>(
+        DATA_DONE, ACK, CTRL_MODE,
+        std::make_unique<EchoConfirmationState>(),
+        std::make_unique<IdleState>());
 }
 
 void SendEOTState::handle(NodeFSM &fsm)
@@ -401,26 +409,6 @@ void ReadDataStartState::handle(NodeFSM &fsm)
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             cout << "stay in read data start" << endl;
         }
-    }
-}
-
-void SendDataDoneState::handle(NodeFSM &fsm)
-{
-    cout << "State: SEND DATA DONE" << endl;
-    int counter = 0;
-    err = transmit_data(audioTx, CTRL_MODE, DATA_DONE);
-
-    while (listen(response, &timeout) != NO_ERROR && counter < 10)
-    {
-        counter++;
-    }
-    if (counter >= 10)
-    {
-        fsm.changeState(std::make_unique<IdleState>());
-    }
-    else
-    {
-        fsm.changeState(std::make_unique<EchoConfirmationState>());
     }
 }
 
