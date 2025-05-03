@@ -76,7 +76,7 @@ private:
 public:
     ReadState(uint8_t expected_receive, uint8_t transmit_code,
               std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
-              bool send_nak = true, uint32_t timeout_us = 5000000)
+              bool send_nak = true, uint32_t timeout_us = 2500000)
         : _expected_receive(expected_receive), _transmit_code(transmit_code),
           _nextState(move(next)), _failState(move(fail)), _send_nak(send_nak),
           _timeout_us(timeout_us) {};
@@ -161,11 +161,12 @@ public:
 
 unique_ptr<NodeState> createSendDataDoneState();
 
-class SendEOTState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendEOTState();
+// class SendEOTState : public NodeState
+// {
+// public:
+//     void handle(NodeFSM &fsm) override;
+// };
 
 class EchoConfirmationState : public NodeState
 {
@@ -176,11 +177,6 @@ public:
 unique_ptr<NodeState> createReadIDState();
 
 unique_ptr<NodeState> createReadRTSState();
-// class ReadRTSState : public NodeState
-// {
-// public:
-//     void handle(NodeFSM &fsm) override;
-// };
 
 class ReadConfirmationState : public NodeState
 {
@@ -194,11 +190,7 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class ReadDataStartState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createReadDataStartState();
 
 class ReadDataFrameState : public NodeState
 {
@@ -206,11 +198,12 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class ReadEOTState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createReadEOTState();
+// class ReadEOTState : public NodeState
+// {
+// public:
+//     void handle(NodeFSM &fsm) override;
+// };
 
 int runFSM(bool rovMode);
 
