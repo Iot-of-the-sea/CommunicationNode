@@ -12,12 +12,20 @@ TimeoutHandler timeout(1000000);
 // unique_ptr<NodeState> SendRTSState = make_unique<NodeState>(SendCtrlState(
 //     RTS, CTS, make_unique<IdleState>(), make_unique<SendHeaderState>()));
 
-unique_ptr<NodeState> createSendRTSState() {
-    return std::make_unique<SendCtrlState>(
-        RTS, CTS,
+unique_ptr<NodeState> createSendRTSState()
+{
+    return make_unique<SendState>(
+        RTS, CTS, CTRL_MODE,
         std::make_unique<SendHeaderState>(),
-        std::make_unique<IdleState>()
-    );
+        std::make_unique<IdleState>());
+}
+
+unique_ptr<NodeState> createSendIDState()
+{
+    return make_unique<SendState>(
+        NODE_ID, ACK, DATA_MODE,
+        createSendRTSState(),
+        std::make_unique<CalibrateState>());
 }
 
 frame nodeFrame = {
@@ -39,7 +47,7 @@ int runFSM(bool rovMode)
     return 0;
 }
 
-void SendCtrlState::handle(NodeFSM &fsm)
+void SendState::handle(NodeFSM &fsm)
 {
     transmit_data(audioTx, CTRL_MODE, _transmit_code);
 
@@ -139,7 +147,7 @@ void CalibrateState::handle(NodeFSM &fsm)
         if (isAck(response))
         {
             cout << "to stage send id" << endl;
-            fsm.changeState(std::make_unique<SendIDState>());
+            fsm.changeState(createSendIDState());
         }
         else
         {
@@ -148,33 +156,33 @@ void CalibrateState::handle(NodeFSM &fsm)
     }
 }
 
-void SendIDState::handle(NodeFSM &fsm)
-{
-    transmit_data(audioTx, DATA_MODE, NODE_ID);
+// void SendIDState::handle(NodeFSM &fsm)
+// {
+//     transmit_data(audioTx, DATA_MODE, NODE_ID);
 
-    err = listen(response, &timeout);
-    cout << (unsigned int)fsm.getCount() << endl;
-    if (fsm.getCount() >= 10)
-    {
-        cout << "revert to calibrate stage" << endl;
-        fsm.changeState(std::make_unique<CalibrateState>());
-    }
-    else if (err == TIMEOUT_ERROR)
-    {
-        fsm.incrCount();
-        cout << "stay in send id" << endl;
-    }
-    else if (!err && isAck(response))
-    {
-        cout << "to stage send rts" << endl;
-        // fsm.changeState(std::make_unique<SendRTSState>());
-        fsm.changeState(createSendRTSState());
-    }
-    else
-    {
-        cout << "stay in send id" << endl;
-    }
-}
+//     err = listen(response, &timeout);
+//     cout << (unsigned int)fsm.getCount() << endl;
+//     if (fsm.getCount() >= 10)
+//     {
+//         cout << "revert to calibrate stage" << endl;
+//         fsm.changeState(std::make_unique<CalibrateState>());
+//     }
+//     else if (err == TIMEOUT_ERROR)
+//     {
+//         fsm.incrCount();
+//         cout << "stay in send id" << endl;
+//     }
+//     else if (!err && isAck(response))
+//     {
+//         cout << "to stage send rts" << endl;
+//         // fsm.changeState(std::make_unique<SendRTSState>());
+//         fsm.changeState(createSendRTSState());
+//     }
+//     else
+//     {
+//         cout << "stay in send id" << endl;
+//     }
+// }
 
 // void SendRTSState::handle(NodeFSM &fsm)
 // {

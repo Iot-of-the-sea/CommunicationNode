@@ -41,20 +41,21 @@ public:
     virtual ~NodeState() = default;
 };
 
-class SendCtrlState : public NodeState
+class SendState : public NodeState
 {
 private:
     uint8_t _transmit_code;
     uint8_t _expected_receive;
+    uint8_t _mode;
     std::unique_ptr<NodeState> _nextState;
     std::unique_ptr<NodeState> _failState;
     uint32_t _timeout_us;
     uint16_t _maxTries;
 
 public:
-    SendCtrlState(uint8_t transmit_code, uint8_t expected_receive,
-                  std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
-                  uint32_t timeout_us = 1000000, uint16_t maxTries = 10)
+    SendState(uint8_t transmit_code, uint8_t expected_receive, uint8_t mode,
+              std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
+              uint32_t timeout_us = 1000000, uint16_t maxTries = 10)
         : _transmit_code(transmit_code), _expected_receive(expected_receive), _nextState(move(next)),
           _failState(move(fail)), _timeout_us(timeout_us), _maxTries(maxTries) {};
 
