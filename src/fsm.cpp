@@ -243,6 +243,7 @@ unique_ptr<NodeState> createSendDataStartState()
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
+    timeout.setDuration(1000000);
     cout << "State: SEND DATA FRAME" << endl;
     transmit_file(audioTx, "./lib/test.txt", timeout);
 
@@ -401,7 +402,7 @@ unique_ptr<NodeState> createReadDataStartState()
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
-    timeout.setDuration(5000000);
+    timeout.setDuration(1000000);
     err = listen(response, &timeout);
 
     receiveFile(audioTx, "./tst/testFile.txt", timeout, 10);
@@ -427,8 +428,6 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     //         cout << packet_data << endl;
     //     }
 
-
-    
     //     cout << "stay in read data frames" << endl;
     // }
     // if (!err)
@@ -507,5 +506,5 @@ unique_ptr<NodeState> createReadEOTState()
         []()
         { return make_unique<IdleState>(); },
         []()
-        { return make_unique<ReadDataFrameState>(); });
+        { return make_unique<IdleState>(); });
 }
