@@ -170,11 +170,6 @@ public:
 unique_ptr<NodeState> createSendDataDoneState();
 
 unique_ptr<NodeState> createSendEOTState();
-// class SendEOTState : public NodeState
-// {
-// public:
-//     void handle(NodeFSM &fsm) override;
-// };
 
 class EchoConfirmationState : public NodeState
 {
@@ -207,11 +202,6 @@ public:
 };
 
 unique_ptr<NodeState> createReadEOTState();
-// class ReadEOTState : public NodeState
-// {
-// public:
-//     void handle(NodeFSM &fsm) override;
-// };
 
 int runFSM(bool rovMode);
 

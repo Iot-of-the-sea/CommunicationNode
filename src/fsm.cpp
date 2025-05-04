@@ -60,7 +60,6 @@ void ReadState::handle(NodeFSM &fsm)
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
-    cout << "???" << endl;
     if (err == TIMEOUT_ERROR)
     {
         cout << "to fail state" << endl;
@@ -68,7 +67,6 @@ void ReadState::handle(NodeFSM &fsm)
     }
     else
     {
-        cout << headerByte << " vs " << _expected_receive << endl;
         err = getHeaderByte(response, headerByte);
         if (!err && headerByte == _expected_receive)
         {
@@ -271,25 +269,8 @@ unique_ptr<NodeState> createSendEOTState()
         []()
         { return make_unique<IdleState>(); },
         []()
-        { return make_unique<SendDataFrameState>(); });
+        { return make_unique<IdleState>(); });
 }
-// void SendEOTState::handle(NodeFSM &fsm)
-// {
-//     transmit_data(audioTx, CTRL_MODE, EOT);
-
-//     listen(response);
-//     if (isAck(response))
-//     {
-//         audioTx.close_stream();
-//         close_receiver();
-//         cout << "to stage idle" << endl;
-//         fsm.changeState(std::make_unique<IdleState>());
-//     }
-//     else
-//     {
-//         cout << "stay in send eot" << endl;
-//     }
-// }
 
 void EchoConfirmationState::handle(NodeFSM &fsm)
 {
@@ -358,6 +339,7 @@ unique_ptr<NodeState> createReadRTSState()
 
 void ReadHeaderState::handle(NodeFSM &fsm)
 {
+    cout << "to read header state" << endl;
     timeout.setDuration(5000000);
 
     err = listen(response, &timeout);
@@ -392,7 +374,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
                 }
                 cout << "File Size: " << (unsigned char)fileSize << endl;
 
-                transmit_data(audioTx, CTRL_MODE, ACK);
+                transmit_data(audioTx, DATA_MODE, HEADER_DATA);
                 cout << "to stage read data start" << endl;
                 fsm.changeState(createReadDataStartState());
             }
@@ -441,7 +423,27 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
 
     //     cout << "stay in read data frames" << endl;
     // }
-    fsm.changeState(createReadEOTState()); // TODO: change back
+    timeout.setDuration(5000000);
+    err = listen(response, &timeout);
+
+    if (!err)
+    {
+        cout << hex << uppercase
+             << setw(2) << setfill('0')
+             << (unsigned int)headerByte << " vs " << (unsigned int)DATA_DONE << endl;
+        err = getHeaderByte(response, headerByte);
+        if (!err && headerByte == DATA_DONE)
+        {
+            transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+            cout << "to next state" << endl;
+            fsm.changeState(createReadEOTState());
+        }
+        else
+        {
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+            cout << "to fail state" << endl;
+        }
+    }
 }
 
 void ReadConfirmationState::handle(NodeFSM &fsm)
@@ -502,23 +504,3 @@ unique_ptr<NodeState> createReadEOTState()
         []()
         { return make_unique<ReadDataFrameState>(); });
 }
-
-// void ReadEOTState::handle(NodeFSM &fsm)
-// {
-//     // listen(response, string(1, static_cast<char>(EOT)));
-//     listen(response);
-//     err = getHeaderByte(response, headerByte);
-//     if (!err && headerByte == EOT)
-//     {
-//         transmit_data(audioTx, CTRL_MODE, ACK);
-//         audioTx.close_stream();
-//         close_receiver();
-//         cout << "to stage idle" << endl;
-//         fsm.changeState(std::make_unique<IdleState>());
-//     }
-//     else
-//     {
-//         transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-//         cout << "stay in read eot" << endl;
-//     }
-// }
