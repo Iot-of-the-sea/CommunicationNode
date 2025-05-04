@@ -190,6 +190,7 @@ unique_ptr<NodeState> createSendRTSState()
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
+    cout << "to send header state" << endl;
     uint32_t fileSize = getFileSize("./lib/test.txt");
     headerData header = {NODE_ID, fileSize};
     err = packetFromHeaderData(packet, header);
@@ -217,7 +218,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
                 fsm.incrCount();
             cout << "stay in send header stage" << endl;
         }
-        else if (headerByte == HEADER_DATA)
+        else if (headerByte == (HEADER_DATA | 0x80))
         {
             cout << "to stage send data start" << endl;
             fsm.changeState(createSendDataStartState());
