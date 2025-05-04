@@ -244,7 +244,7 @@ unique_ptr<NodeState> createSendDataStartState()
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
     cout << "State: SEND DATA FRAME" << endl;
-    // transmit_file(audioTx, "./lib/test.txt", timeout);
+    transmit_file(audioTx, "./lib/test.txt", timeout);
 
     cout << "to stage echo confirmation" << endl;
     fsm.changeState(createSendDataDoneState());
@@ -401,6 +401,11 @@ unique_ptr<NodeState> createReadDataStartState()
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
+    timeout.setDuration(5000000);
+    err = listen(response, &timeout);
+
+    receiveFile(audioTx, "./tst/testFile.txt", timeout, 10);
+
     // listen(response);
     // err = getHeaderByte(response, headerByte);
     // if (!err && headerByte == DATA_DONE)
@@ -422,29 +427,28 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     //         cout << packet_data << endl;
     //     }
 
+
+    
     //     cout << "stay in read data frames" << endl;
     // }
-    timeout.setDuration(5000000);
-    err = listen(response, &timeout);
-
-    if (!err)
-    {
-        cout << hex << uppercase
-             << setw(2) << setfill('0')
-             << (unsigned int)headerByte << " vs " << (unsigned int)DATA_DONE << endl;
-        err = getHeaderByte(response, headerByte);
-        if (!err && headerByte == DATA_DONE)
-        {
-            transmit_data(audioTx, CTRL_MODE, DATA_DONE);
-            cout << "to next state" << endl;
-            fsm.changeState(createReadEOTState());
-        }
-        else
-        {
-            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            cout << "to fail state" << endl;
-        }
-    }
+    // if (!err)
+    // {
+    //     cout << hex << uppercase
+    //          << setw(2) << setfill('0')
+    //          << (unsigned int)headerByte << " vs " << (unsigned int)DATA_DONE << endl;
+    //     err = getHeaderByte(response, headerByte);
+    //     if (!err && headerByte == DATA_DONE)
+    //     {
+    transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    cout << "to next state" << endl;
+    fsm.changeState(createReadEOTState());
+    //     }
+    //     else
+    //     {
+    //         transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+    //         cout << "to fail state" << endl;
+    //     }
+    // }
 }
 
 void ReadConfirmationState::handle(NodeFSM &fsm)
