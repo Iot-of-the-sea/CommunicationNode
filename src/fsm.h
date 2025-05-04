@@ -17,6 +17,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <string.h>
+#include <functional>
 
 #if DEPLOYED
 #include "../lib/audio/audiorx/audioreceiver.h"
@@ -47,17 +48,18 @@ private:
     uint8_t _transmit_code;
     uint8_t _expected_receive;
     uint8_t _mode;
-    std::unique_ptr<NodeState> _nextState;
-    std::unique_ptr<NodeState> _failState;
+    function<unique_ptr<NodeState>()> _nextStateFactory;
+    function<unique_ptr<NodeState>()> _failStateFactory;
     uint32_t _timeout_us;
     uint16_t _maxTries;
 
 public:
     SendState(uint8_t transmit_code, uint8_t expected_receive, uint8_t mode,
-              std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
+              function<unique_ptr<NodeState>()> nextFactory,
+              function<unique_ptr<NodeState>()> failFactory,
               uint32_t timeout_us = 1000000, uint16_t maxTries = 10)
         : _transmit_code(transmit_code), _expected_receive(expected_receive), _mode(mode),
-          _nextState(move(next)), _failState(move(fail)),
+          _nextStateFactory(move(nextFactory)), _failStateFactory(move(failFactory)),
           _timeout_us(timeout_us), _maxTries(maxTries) {};
 
     void handle(NodeFSM &fsm) override;
@@ -68,18 +70,19 @@ class ReadState : public NodeState
 private:
     uint8_t _expected_receive;
     uint8_t _transmit_code;
-    std::unique_ptr<NodeState> _nextState;
-    std::unique_ptr<NodeState> _failState;
+    std::function<std::unique_ptr<NodeState>()> _nextStateFactory;
+    std::function<std::unique_ptr<NodeState>()> _failStateFactory;
     bool _send_nak;
     uint32_t _timeout_us;
 
 public:
     ReadState(uint8_t expected_receive, uint8_t transmit_code,
-              std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
+              function<unique_ptr<NodeState>()> nextFactory,
+              function<unique_ptr<NodeState>()> failFactory,
               bool send_nak = true, uint32_t timeout_us = 2500000)
         : _expected_receive(expected_receive), _transmit_code(transmit_code),
-          _nextState(move(next)), _failState(move(fail)), _send_nak(send_nak),
-          _timeout_us(timeout_us) {};
+          _nextStateFactory(move(nextFactory)), _failStateFactory(move(failFactory)),
+          _send_nak(send_nak), _timeout_us(timeout_us) {};
 
     void handle(NodeFSM &fsm) override;
 };
@@ -111,8 +114,12 @@ public:
 
     void changeState(std::unique_ptr<NodeState> newState)
     {
-        cout << "new state" << endl;
+        cout << "NEW STATE" << endl;
         _counter = 0;
+        if (newState == nullptr)
+        {
+            cerr << "nullptr" << endl;
+        }
         _state = std::move(newState);
     }
 

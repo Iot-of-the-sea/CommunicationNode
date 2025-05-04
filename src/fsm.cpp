@@ -38,7 +38,7 @@ void SendState::handle(NodeFSM &fsm)
     if (fsm.getCount() >= _maxTries)
     {
         cout << "to fail state" << endl;
-        fsm.changeState(move(_failState));
+        fsm.changeState(move(_failStateFactory()));
         return;
     }
 
@@ -48,7 +48,7 @@ void SendState::handle(NodeFSM &fsm)
     if (!err && headerByte == _expected_receive)
     {
         cout << "to next state" << endl;
-        fsm.changeState(move(_nextState));
+        fsm.changeState(move(_nextStateFactory()));
         return;
     }
 
@@ -60,19 +60,21 @@ void ReadState::handle(NodeFSM &fsm)
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
+    cout << "???" << endl;
     if (err == TIMEOUT_ERROR)
     {
         cout << "to fail state" << endl;
-        fsm.changeState(move(_failState));
+        fsm.changeState(_failStateFactory());
     }
     else
     {
+        cout << headerByte << " vs " << _expected_receive << endl;
         err = getHeaderByte(response, headerByte);
         if (!err && headerByte == _expected_receive)
         {
             transmit_data(audioTx, CTRL_MODE, _transmit_code);
             cout << "to next state" << endl;
-            fsm.changeState(move(_nextState));
+            fsm.changeState(move(_nextStateFactory()));
         }
         else
         {
@@ -171,8 +173,10 @@ unique_ptr<NodeState> createSendIDState()
     cout << "to send id state" << endl;
     return make_unique<SendState>(
         NODE_ID, (NODE_ID | (1 << 7)), DATA_MODE,
-        createSendRTSState(),
-        std::make_unique<CalibrateState>());
+        []()
+        { return createSendRTSState(); },
+        []()
+        { return make_unique<CalibrateState>(); });
 }
 
 unique_ptr<NodeState> createSendRTSState()
@@ -180,8 +184,10 @@ unique_ptr<NodeState> createSendRTSState()
     cout << "to send rts state" << endl;
     return make_unique<SendState>(
         RTS, CTS, CTRL_MODE,
-        std::make_unique<SendHeaderState>(),
-        std::make_unique<IdleState>());
+        []()
+        { return make_unique<SendHeaderState>(); },
+        []()
+        { return make_unique<IdleState>(); });
 }
 
 void SendHeaderState::handle(NodeFSM &fsm)
@@ -230,8 +236,10 @@ unique_ptr<NodeState> createSendDataStartState()
     cout << "to send data start state" << endl;
     return make_unique<SendState>(
         DATA_START, DATA_START, CTRL_MODE,
-        std::make_unique<SendDataFrameState>(),
-        std::make_unique<SendHeaderState>());
+        []()
+        { return make_unique<SendDataFrameState>(); },
+        []()
+        { return make_unique<SendHeaderState>(); });
 }
 
 void SendDataFrameState::handle(NodeFSM &fsm)
@@ -249,8 +257,10 @@ unique_ptr<NodeState> createSendDataDoneState()
     return make_unique<SendState>(
         DATA_DONE, DATA_DONE, CTRL_MODE,
         // std::make_unique<EchoConfirmationState>(), TODO: change this back
-        createSendEOTState(),
-        std::make_unique<IdleState>());
+        []()
+        { return createSendEOTState(); },
+        []()
+        { return make_unique<IdleState>(); });
 }
 
 unique_ptr<NodeState> createSendEOTState()
@@ -258,8 +268,10 @@ unique_ptr<NodeState> createSendEOTState()
     cout << "to send eot state" << endl;
     return make_unique<SendState>(
         EOT, EOT, CTRL_MODE,
-        std::make_unique<IdleState>(),
-        std::make_unique<SendDataFrameState>());
+        []()
+        { return make_unique<IdleState>(); },
+        []()
+        { return make_unique<SendDataFrameState>(); });
 }
 // void SendEOTState::handle(NodeFSM &fsm)
 // {
@@ -326,8 +338,10 @@ unique_ptr<NodeState> createReadIDState()
     cout << "to read id state" << endl;
     return make_unique<ReadState>(
         (NODE_ID | 0x80), (NODE_ID | 0x80),
-        createReadRTSState(),
-        make_unique<CalibrateState>());
+        []()
+        { return createReadRTSState(); },
+        []()
+        { return make_unique<CalibrateState>(); });
 }
 
 unique_ptr<NodeState> createReadRTSState()
@@ -335,8 +349,11 @@ unique_ptr<NodeState> createReadRTSState()
     cout << "to read rts state" << endl;
     return make_unique<ReadState>(
         RTS, CTS,
-        make_unique<ReadHeaderState>(),
-        make_unique<IdleState>(), false);
+        []()
+        { return make_unique<ReadHeaderState>(); },
+        []()
+        { return make_unique<IdleState>(); },
+        false);
 }
 
 void ReadHeaderState::handle(NodeFSM &fsm)
@@ -393,8 +410,10 @@ unique_ptr<NodeState> createReadDataStartState()
     cout << "to read data start state" << endl;
     return make_unique<ReadState>(
         DATA_START, DATA_START,
-        make_unique<ReadDataFrameState>(),
-        make_unique<ReadHeaderState>());
+        []()
+        { return make_unique<ReadDataFrameState>(); },
+        []()
+        { return make_unique<ReadHeaderState>(); });
 }
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
@@ -478,8 +497,10 @@ unique_ptr<NodeState> createReadEOTState()
     cout << "to read eot state" << endl;
     return make_unique<ReadState>(
         EOT, EOT,
-        make_unique<IdleState>(),
-        make_unique<ReadDataFrameState>());
+        []()
+        { return make_unique<IdleState>(); },
+        []()
+        { return make_unique<ReadDataFrameState>(); });
 }
 
 // void ReadEOTState::handle(NodeFSM &fsm)
