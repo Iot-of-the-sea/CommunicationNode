@@ -168,14 +168,16 @@ void CalibrateState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createSendIDState()
 {
+    cout << "to send id state" << endl;
     return make_unique<SendState>(
-        NODE_ID, ACK, DATA_MODE,
+        NODE_ID, (NODE_ID | (1 << 7)), DATA_MODE,
         createSendRTSState(),
         std::make_unique<CalibrateState>());
 }
 
 unique_ptr<NodeState> createSendRTSState()
 {
+    cout << "to send rts state" << endl;
     return make_unique<SendState>(
         RTS, CTS, CTRL_MODE,
         std::make_unique<SendHeaderState>(),
@@ -196,6 +198,9 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
         err = listen(response, &timeout);
 
+        if (!err)
+            err = getHeaderByte(response, headerByte);
+
         cout << (unsigned int)fsm.getCount() << endl;
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
@@ -208,7 +213,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
                 fsm.incrCount();
             cout << "stay in send header stage" << endl;
         }
-        else if (!err && isAck(response))
+        else if (headerByte == HEADER_DATA)
         {
             cout << "to stage send data start" << endl;
             fsm.changeState(createSendDataStartState());
@@ -222,8 +227,9 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createSendDataStartState()
 {
+    cout << "to send data start state" << endl;
     return make_unique<SendState>(
-        DATA_START, ACK, CTRL_MODE,
+        DATA_START, DATA_START, CTRL_MODE,
         std::make_unique<SendDataFrameState>(),
         std::make_unique<SendHeaderState>());
 }
@@ -239,8 +245,9 @@ void SendDataFrameState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createSendDataDoneState()
 {
+    cout << "to send data done state" << endl;
     return make_unique<SendState>(
-        DATA_DONE, ACK, CTRL_MODE,
+        DATA_DONE, DATA_DONE, CTRL_MODE,
         // std::make_unique<EchoConfirmationState>(), TODO: change this back
         createSendEOTState(),
         std::make_unique<IdleState>());
@@ -248,8 +255,9 @@ unique_ptr<NodeState> createSendDataDoneState()
 
 unique_ptr<NodeState> createSendEOTState()
 {
+    cout << "to send eot state" << endl;
     return make_unique<SendState>(
-        EOT, ACK, CTRL_MODE,
+        EOT, EOT, CTRL_MODE,
         std::make_unique<IdleState>(),
         std::make_unique<SendDataFrameState>());
 }
@@ -315,14 +323,16 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createReadIDState()
 {
+    cout << "to read id state" << endl;
     return make_unique<ReadState>(
-        (NODE_ID | 0x80), ACK,
+        (NODE_ID | 0x80), (NODE_ID | 0x80),
         createReadRTSState(),
         make_unique<CalibrateState>());
 }
 
 unique_ptr<NodeState> createReadRTSState()
 {
+    cout << "to read rts state" << endl;
     return make_unique<ReadState>(
         RTS, CTS,
         make_unique<ReadHeaderState>(),
@@ -380,8 +390,9 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createReadDataStartState()
 {
+    cout << "to read data start state" << endl;
     return make_unique<ReadState>(
-        DATA_START, ACK,
+        DATA_START, DATA_START,
         make_unique<ReadDataFrameState>(),
         make_unique<ReadHeaderState>());
 }
@@ -464,8 +475,9 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createReadEOTState()
 {
+    cout << "to read eot state" << endl;
     return make_unique<ReadState>(
-        EOT, ACK,
+        EOT, EOT,
         make_unique<IdleState>(),
         make_unique<ReadDataFrameState>());
 }

@@ -57,8 +57,8 @@ public:
               std::unique_ptr<NodeState> next, std::unique_ptr<NodeState> fail,
               uint32_t timeout_us = 1000000, uint16_t maxTries = 10)
         : _transmit_code(transmit_code), _expected_receive(expected_receive), _mode(mode),
-          _nextState(move(next)), _failState(move(fail)), _timeout_us(timeout_us),
-          _maxTries(maxTries) {};
+          _nextState(move(next)), _failState(move(fail)),
+          _timeout_us(timeout_us), _maxTries(maxTries) {};
 
     void handle(NodeFSM &fsm) override;
 };
