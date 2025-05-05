@@ -402,7 +402,7 @@ unique_ptr<NodeState> createReadDataStartState()
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
-    timeout.setDuration(5000000);
+    timeout.setDuration(1000000);
     err = listen(response, &timeout);
 
     receiveFile(audioTx, "./tst/testFile.txt", timeout, 10);
