@@ -62,7 +62,7 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
 
     FileWriter file("./tst/testFile.txt");
     file.open();
-    while (headerByte != DATA_DONE && counter < maxTries)
+    while (headerByte != DATA_DONE)
     {
         err = listen(result, &timeout);
         if (!err && check_received_crc(result))
@@ -86,6 +86,9 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
             counter++;
         }
     }
+
+    if (counter >= maxTries)
+        file.write(last_rx_data);
 
     file.close();
 
@@ -222,10 +225,13 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
             transmit_data(tx, CTRL_MODE, NAK_SEND);
             counter++;
         }
-    }
 
-    if (counter >= maxTries)
-        file.write(last_rx_data);
+        if (counter >= maxTries)
+        {
+            file.write(last_rx_data);
+            break;
+        }
+    }
 
     file.close();
 
