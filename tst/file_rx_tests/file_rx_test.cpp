@@ -22,7 +22,7 @@ int main()
     init_pins("toggle");
 
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 5, &rxTestData);
+    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 10, &rxTestData);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
     audioTx.close_stream();

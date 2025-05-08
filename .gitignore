@@ -42,3 +42,5 @@
 *.o
 
 *.dSYM/
+
+file_*x_test

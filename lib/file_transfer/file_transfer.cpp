@@ -205,18 +205,18 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         set_gpio_mode(TX_MODE);
         if (!err && check_received_crc(result))
         {
-            getHeaderByte(result, headerByte);
-            get_packet_data(result, rx_data);
+            set_gpio_mode(TX_MODE);
+            transmit_data(tx, CTRL_MODE, ACK);
 
+            getHeaderByte(result, headerByte);
             if (headerByte != lastHeader)
             {
                 file.write(last_rx_data);
             }
 
+            get_packet_data(result, rx_data);
             last_rx_data = rx_data;
             lastHeader = headerByte;
-            set_gpio_mode(TX_MODE);
-            transmit_data(tx, CTRL_MODE, ACK);
             counter = 0;
         }
         else
