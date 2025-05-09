@@ -43,3 +43,10 @@ uint8_t TimeoutHandler::startTimeout(uint32_t dur_us)
 
     return err;
 }
+
+uint8_t TimeoutHandler::reset()
+{
+    _state = IDLE;
+    clearTriggered();
+    return NO_ERROR;
+}

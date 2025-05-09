@@ -69,14 +69,23 @@ uint8_t on_24()
     }
 
     val24 = true;
-    gpiod_line_set_value(line24, val24);
+    if (gpiod_line_set_value(line24, val24))
+    {
+        val24 = false;
+        return GPIO_ERROR;
+    }
     return NO_ERROR;
 }
 
 uint8_t off_24()
 {
     val24 = false;
-    gpiod_line_set_value(line24, val24);
+    if (gpiod_line_set_value(line24, val24))
+    {
+        val24 = true;
+        return GPIO_ERROR;
+    }
+
     return NO_ERROR;
 }
 
@@ -89,45 +98,57 @@ uint8_t on_25()
     }
 
     val25 = true;
-    gpiod_line_set_value(line25, val25);
+    if (gpiod_line_set_value(line25, val25))
+    {
+        val25 = false;
+        return GPIO_ERROR;
+    }
     return NO_ERROR;
 }
 
 uint8_t off_25()
 {
     val25 = false;
-    gpiod_line_set_value(line25, val25);
+    if (gpiod_line_set_value(line25, val25))
+    {
+        val25 = true;
+        return GPIO_ERROR;
+    }
     return NO_ERROR;
 }
 
 uint8_t set_gpio_mode(uint8_t mode)
 {
+    uint8_t err = NO_ERROR;
     if (mode == RX_MODE)
     {
-        off_24();
+        err = off_24();
         usleep(5);
-        on_25();
+        if (!err)
+            err = on_25();
     }
     else if (mode == TX_MODE)
     {
-        off_25();
+        err = off_25();
         usleep(5);
-        on_24();
+        if (!err)
+            err = on_24();
     }
     else
     {
-        off_24();
-        off_25();
+        err = off_24();
+        if (!err)
+            err = off_25();
     }
 
-    return NO_ERROR;
+    return err;
 }
 
 // int main()
 // {
 
 //     init_gpio();
-//     init_pins();
+//     init_pins("toggle");
 
 //     on_24();
 //     on_25();

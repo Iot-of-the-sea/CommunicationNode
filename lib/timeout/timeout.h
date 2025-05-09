@@ -39,6 +39,8 @@ public:
     uint32_t getDuration() { return _duration_us; }
     bool getTriggered() { return _triggered; }
     void clearTriggered() { _triggered = false; }
+
+    uint8_t reset();
 };
 
 #endif // __TIMEOUT__

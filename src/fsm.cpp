@@ -101,6 +101,15 @@ void InitState::handle(NodeFSM &fsm)
 
     init_receiver();
     audioTx.init_stream();
+    err = init_gpio();
+
+    if (!err)
+        err = init_pins("toggle");
+    if (err)
+    {
+        cout << "GPIO ERROR" << endl;
+        exit(0);
+    }
 
     if (fsm.getIsROVMode())
         cout << "ready to receive? (y/n) ";
@@ -119,6 +128,7 @@ void DoneState::handle(NodeFSM &fsm)
     {
         close_receiver();
         audioTx.close_stream();
+        close_gpio();
         cout << "EXIT" << endl;
         exit(0);
     }
@@ -173,43 +183,6 @@ void SearchState::handle(NodeFSM &fsm)
     }
 }
 
-// void CalibrateState::handle(NodeFSM &fsm)
-// {
-//     if (fsm.getIsROVMode())
-//     {
-//         // cout << "calibrated? (y/n) ";
-//         // cin >> response;
-
-//         if (true || response == "y")
-//         {
-//             transmit_data(audioTx, CTRL_MODE, ACK);
-
-//             cout << "to stage read id" << endl;
-//             fsm.changeState(createReadIDState());
-//         }
-//         else
-//         {
-//             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-
-//             cout << "stay in calibrate" << endl;
-//         }
-//     }
-//     else
-//     {
-//         timeout.setDuration(5000000);
-//         err = listen(response, &timeout);
-//         if (isAck(response))
-//         {
-//             cout << "to stage send id" << endl;
-//             fsm.changeState(createSendIDState());
-//         }
-//         else
-//         {
-//             cout << "stay in calibrate" << endl;
-//         }
-//     }
-// }
-
 unique_ptr<NodeState> createSendIDState()
 {
     cout << "to send id state" << endl;
@@ -250,7 +223,6 @@ void SendHeaderState::handle(NodeFSM &fsm)
         if (!err)
             err = getHeaderByte(response, headerByte);
 
-        cout << (unsigned int)fsm.getCount() << endl;
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
             cout << "return to send rts state" << endl;
@@ -287,7 +259,8 @@ unique_ptr<NodeState> createSendDataStartState()
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
-    timeout.setDuration(1000000);
+    timeout.reset();
+    timeout.setDuration(100000);
     cout << "State: SEND DATA FRAME" << endl;
     transmit_file(audioTx, "./lib/test.txt", timeout);
 
@@ -402,10 +375,16 @@ void ReadHeaderState::handle(NodeFSM &fsm)
         if (err)
         {
             cout << "error" << endl;
+            cout << "revert to read rts stage" << endl;
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+            fsm.changeState(createReadRTSState());
         }
         else if ((headerByte & 0x7F) != HEADER_DATA)
         {
             cout << "bad header byte" << endl;
+            cout << "revert to read rts stage" << endl;
+            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+            fsm.changeState(createReadRTSState());
         }
         else
         {
@@ -429,6 +408,8 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             else
             {
                 cout << "stay in read header" << endl;
+                cout << "revert to read rts stage" << endl;
+                fsm.changeState(createReadRTSState());
                 transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             }
         }
@@ -448,9 +429,11 @@ unique_ptr<NodeState> createReadDataStartState()
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
-    timeout.setDuration(1000000);
-    // err = listen(response, &timeout);
 
+    timeout.reset();
+    err = timeout.setDuration(100000);
+
+    cout << "starting file receive" << endl;
     receiveFile(audioTx, "./tst/testFile.txt", timeout, 10);
 
     // listen(response);

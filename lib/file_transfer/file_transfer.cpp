@@ -60,11 +60,18 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
     uint8_t err;
     uint16_t counter = 0;
 
+    cout << timeout.getDuration() << endl;
     FileWriter file("./tst/testFile.txt");
-    file.open();
+    err = file.open();
+    if (err)
+    {
+        cout << "error opening file" << endl;
+        return err;
+    }
+
     while (headerByte != DATA_DONE)
     {
-        set_gpio_mode(RX_MODE);
+        err = set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
 
         if (!err)
