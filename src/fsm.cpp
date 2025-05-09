@@ -3,8 +3,9 @@
 /***
  * TODO:
  * 1. Implement DoneState - DONE
- * 2. Fix ReadHeader
+ * 2. Fix ReadHeader - GOOD FOR NOW
  * 2. Add back failure case for transmitting
+ * 3. Fix failure transitions
  * 3. Add EOT response for all states
  * 3. Implement 2-way file transfer
  * 4. Clean/pare down FSM states
