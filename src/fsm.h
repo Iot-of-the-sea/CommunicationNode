@@ -32,7 +32,7 @@
 using namespace std;
 
 class NodeFSM;
-class IdleState;
+class InitState;
 
 // Abstract base class for all states
 class NodeState
@@ -88,7 +88,7 @@ public:
 };
 
 // Concrete states
-class IdleState : public NodeState
+class InitState : public NodeState
 {
 public:
     void handle(NodeFSM &fsm) override;
@@ -103,10 +103,10 @@ private:
     uint16_t _counter;
 
 public:
-    NodeFSM() : _state(std::make_unique<IdleState>()), _rov_mode(true),
+    NodeFSM() : _state(std::make_unique<InitState>()), _rov_mode(true),
                 _counter(0) {}
 
-    NodeFSM(bool rov_mode) : _state(std::make_unique<IdleState>()),
+    NodeFSM(bool rov_mode) : _state(std::make_unique<InitState>()),
                              _rov_mode(rov_mode), _counter(0)
     {
         cout << "selected mode: " << _rov_mode << endl;
@@ -135,6 +135,12 @@ public:
 
     uint16_t getCount() { return _counter; }
     void incrCount() { _counter++; }
+};
+
+class IdleState : public NodeState
+{
+public:
+    void handle(NodeFSM &fsm) override;
 };
 
 class CalibrateState : public NodeState

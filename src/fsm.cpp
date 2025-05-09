@@ -84,6 +84,21 @@ void ReadState::handle(NodeFSM &fsm)
 }
 
 // Implement state transitions
+void InitState::handle(NodeFSM &fsm)
+{
+
+    init_receiver();
+    audioTx.init_stream();
+
+    if (fsm.getIsROVMode())
+        cout << "ready to receive? (y/n) ";
+    else
+        cout << "sense? (y/n) ";
+
+    fsm.changeState(std::make_unique<IdleState>());
+}
+
+// Implement state transitions
 void IdleState::handle(NodeFSM &fsm)
 {
     if (fsm.getIsROVMode())
@@ -91,11 +106,9 @@ void IdleState::handle(NodeFSM &fsm)
     else
         cout << "sense? (y/n) ";
 
-    cin >> response;
-    if (response == "y")
+    // cin >> response;
+    if (true || response == "y")
     {
-        init_receiver();
-        audioTx.init_stream();
         if (fsm.getIsROVMode())
         {
             cout << "to stage search" << endl;
