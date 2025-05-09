@@ -94,6 +94,12 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
+class DoneState : public NodeState
+{
+public:
+    void handle(NodeFSM &fsm) override;
+};
+
 // Abstract base class for node FSMs
 class NodeFSM
 {

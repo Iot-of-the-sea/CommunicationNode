@@ -1,5 +1,15 @@
 #include "fsm.h"
 
+/***
+ * TODO:
+ * 1. Implement DoneState - DONE
+ * 2. Add back failure case for transmitting
+ * 3. Add EOT response for all states
+ * 3. Implement 2-way file transfer
+ * 4. Clean/pare down FSM states
+ * 5. Refactor for constants
+ */
+
 using namespace std;
 using namespace chrono;
 
@@ -98,6 +108,24 @@ void InitState::handle(NodeFSM &fsm)
     fsm.changeState(std::make_unique<IdleState>());
 }
 
+void DoneState::handle(NodeFSM &fsm)
+{
+
+    timeout.setDuration(30000000);
+    err = listen(response, &timeout);
+    if (err == TIMEOUT_ERROR)
+    {
+        close_receiver();
+        audioTx.close_stream();
+        cout << "EXIT" << endl;
+        exit(0);
+    }
+    else
+    {
+        fsm.changeState(std::make_unique<IdleState>());
+    }
+}
+
 // Implement state transitions
 void IdleState::handle(NodeFSM &fsm)
 {
@@ -116,8 +144,8 @@ void IdleState::handle(NodeFSM &fsm)
         }
         else
         {
-            cout << "to stage calibrate" << endl;
-            fsm.changeState(std::make_unique<CalibrateState>());
+            cout << "to stage send id" << endl;
+            fsm.changeState(createSendIDState());
         }
     }
     else
@@ -133,8 +161,8 @@ void SearchState::handle(NodeFSM &fsm)
 
     if (true || response == "y")
     {
-        cout << "to stage calibrate" << endl;
-        fsm.changeState(std::make_unique<CalibrateState>());
+        cout << "to stage read id" << endl;
+        fsm.changeState(createReadIDState());
     }
     else
     {
@@ -142,42 +170,42 @@ void SearchState::handle(NodeFSM &fsm)
     }
 }
 
-void CalibrateState::handle(NodeFSM &fsm)
-{
-    if (fsm.getIsROVMode())
-    {
-        // cout << "calibrated? (y/n) ";
-        // cin >> response;
+// void CalibrateState::handle(NodeFSM &fsm)
+// {
+//     if (fsm.getIsROVMode())
+//     {
+//         // cout << "calibrated? (y/n) ";
+//         // cin >> response;
 
-        if (true || response == "y")
-        {
-            transmit_data(audioTx, CTRL_MODE, ACK);
+//         if (true || response == "y")
+//         {
+//             transmit_data(audioTx, CTRL_MODE, ACK);
 
-            cout << "to stage read id" << endl;
-            fsm.changeState(createReadIDState());
-        }
-        else
-        {
-            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+//             cout << "to stage read id" << endl;
+//             fsm.changeState(createReadIDState());
+//         }
+//         else
+//         {
+//             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
 
-            cout << "stay in calibrate" << endl;
-        }
-    }
-    else
-    {
-        timeout.setDuration(5000000);
-        err = listen(response, &timeout);
-        if (isAck(response))
-        {
-            cout << "to stage send id" << endl;
-            fsm.changeState(createSendIDState());
-        }
-        else
-        {
-            cout << "stay in calibrate" << endl;
-        }
-    }
-}
+//             cout << "stay in calibrate" << endl;
+//         }
+//     }
+//     else
+//     {
+//         timeout.setDuration(5000000);
+//         err = listen(response, &timeout);
+//         if (isAck(response))
+//         {
+//             cout << "to stage send id" << endl;
+//             fsm.changeState(createSendIDState());
+//         }
+//         else
+//         {
+//             cout << "stay in calibrate" << endl;
+//         }
+//     }
+// }
 
 unique_ptr<NodeState> createSendIDState()
 {
@@ -187,7 +215,7 @@ unique_ptr<NodeState> createSendIDState()
         []()
         { return createSendRTSState(); },
         []()
-        { return make_unique<CalibrateState>(); });
+        { return createSendEOTState(); });
 }
 
 unique_ptr<NodeState> createSendRTSState()
@@ -284,7 +312,8 @@ unique_ptr<NodeState> createSendEOTState()
         []()
         { return make_unique<IdleState>(); },
         []()
-        { return make_unique<IdleState>(); });
+        { return make_unique<DoneState>(); },
+        1000000, 5);
 }
 
 void EchoConfirmationState::handle(NodeFSM &fsm)
@@ -337,7 +366,8 @@ unique_ptr<NodeState> createReadIDState()
         []()
         { return createReadRTSState(); },
         []()
-        { return make_unique<CalibrateState>(); });
+        { return createSendEOTState(); },
+        true, 20000000);
 }
 
 unique_ptr<NodeState> createReadRTSState()
