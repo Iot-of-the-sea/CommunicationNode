@@ -3,6 +3,7 @@
 /***
  * TODO:
  * 1. Implement DoneState - DONE
+ * 2. Fix ReadHeader
  * 2. Add back failure case for transmitting
  * 3. Add EOT response for all states
  * 3. Implement 2-way file transfer
@@ -89,6 +90,7 @@ void ReadState::handle(NodeFSM &fsm)
             if (_send_nak)
                 transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             cout << "to fail state" << endl;
+            fsm.changeState(_failStateFactory());
         }
     }
 }
@@ -129,6 +131,7 @@ void DoneState::handle(NodeFSM &fsm)
 // Implement state transitions
 void IdleState::handle(NodeFSM &fsm)
 {
+    cout << "IDLE" << endl;
     if (fsm.getIsROVMode())
         cout << "ready to receive? (y/n) ";
     else
@@ -159,9 +162,9 @@ void SearchState::handle(NodeFSM &fsm)
     // cout << "response? (y/n) ";
     // cin >> response;
 
+    cout << "SEARCH" << endl;
     if (true || response == "y")
     {
-        cout << "to stage read id" << endl;
         fsm.changeState(createReadIDState());
     }
     else
@@ -360,7 +363,7 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createReadIDState()
 {
-    cout << "to read id state" << endl;
+    cout << "READ ID" << endl;
     return make_unique<ReadState>(
         (NODE_ID | 0x80), (NODE_ID | 0x80),
         []()
@@ -372,7 +375,7 @@ unique_ptr<NodeState> createReadIDState()
 
 unique_ptr<NodeState> createReadRTSState()
 {
-    cout << "to read rts state" << endl;
+    cout << "READ RTS" << endl;
     return make_unique<ReadState>(
         RTS, CTS,
         []()
@@ -384,7 +387,7 @@ unique_ptr<NodeState> createReadRTSState()
 
 void ReadHeaderState::handle(NodeFSM &fsm)
 {
-    cout << "to read header state" << endl;
+    cout << "READ HEADER" << endl;
     timeout.setDuration(5000000);
 
     err = listen(response, &timeout);
@@ -446,7 +449,7 @@ unique_ptr<NodeState> createReadDataStartState()
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
     timeout.setDuration(1000000);
-    err = listen(response, &timeout);
+    // err = listen(response, &timeout);
 
     receiveFile(audioTx, "./tst/testFile.txt", timeout, 10);
 
@@ -481,7 +484,7 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     //     err = getHeaderByte(response, headerByte);
     //     if (!err && headerByte == DATA_DONE)
     //     {
-    transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    // transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     cout << "to next state" << endl;
     fsm.changeState(createReadEOTState());
     //     }

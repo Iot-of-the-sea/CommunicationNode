@@ -105,13 +105,13 @@ uint8_t set_gpio_mode(uint8_t mode)
     if (mode == RX_MODE)
     {
         off_24();
-        usleep(10);
+        usleep(5);
         on_25();
     }
     else if (mode == TX_MODE)
     {
         off_25();
-        usleep(10);
+        usleep(5);
         on_24();
     }
     else

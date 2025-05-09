@@ -14,6 +14,7 @@
 #define ARGUMENT_ERROR 0x05
 #define MEMORY_ERROR 0x06
 #define GPIO_ERROR 0x07
+#define CRC_ERROR 0x08
 
 using namespace std;
 

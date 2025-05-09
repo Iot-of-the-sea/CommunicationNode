@@ -32,6 +32,7 @@ typedef struct
 {
     int received;
     int timeouts;
+    int empty_packets;
     int crc_failed;
 } RxTestData;
 

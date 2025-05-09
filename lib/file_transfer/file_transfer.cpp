@@ -64,31 +64,53 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
     file.open();
     while (headerByte != DATA_DONE)
     {
+        // set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
+        // set_gpio_mode(TX_MODE);
         if (!err && check_received_crc(result))
         {
-            getHeaderByte(result, headerByte);
-            get_packet_data(result, rx_data);
+            // set_gpio_mode(TX_MODE);
+            transmit_data(tx, CTRL_MODE, ACK);
 
-            if (headerByte != lastHeader)
+            err = getHeaderByte(result, headerByte);
+            if (err)
+            {
+                cout << "HEADER ERR" << endl;
+            }
+            if (!err && headerByte != lastHeader)
             {
                 file.write(last_rx_data);
             }
 
-            last_rx_data = rx_data;
-            lastHeader = headerByte;
-            transmit_data(tx, CTRL_MODE, ACK);
-            counter = 0;
+            err = get_packet_data(result, rx_data);
+            if (!err)
+            {
+                last_rx_data = rx_data;
+                lastHeader = headerByte;
+                counter = 0;
+            }
+            else
+            {
+                cout << "ERROR" << endl;
+            }
         }
         else
         {
+            if (!err && !check_received_crc(result))
+            {
+                cout << "BAD CRC" << endl;
+            }
+            set_gpio_mode(TX_MODE);
             transmit_data(tx, CTRL_MODE, NAK_SEND);
             counter++;
         }
-    }
 
-    if (counter >= maxTries)
-        file.write(last_rx_data);
+        if (counter >= maxTries)
+        {
+            file.write(last_rx_data);
+            break;
+        }
+    }
 
     file.close();
 
@@ -174,6 +196,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 {
     testData->received = 0;
     testData->timeouts = 0;
+    testData->empty_packets = 0;
     testData->crc_failed = 0;
 
     string result, last_rx_data, rx_data;
@@ -184,47 +207,87 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
 
     FileWriter file("./tst/testFile.txt");
     file.open();
-    // while (headerByte != DATA_DONE && counter < maxTries)
     while (headerByte != DATA_DONE)
     {
         set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
-        if (err == TIMEOUT_ERROR)
-        {
-            testData->timeouts++;
-        }
-        else
-        {
-            testData->received++;
-            if (!err && !check_received_crc(result))
-            {
-                testData->crc_failed++;
-            }
-        }
+
+        if (!err)
+            err = getHeaderByte(result, headerByte);
+
+        if (!err)
+            err = get_packet_data(result, rx_data);
+
+        if (!err && !check_received_crc(result))
+            err = CRC_ERROR;
 
         set_gpio_mode(TX_MODE);
-        if (!err && check_received_crc(result))
+        if (!err)
         {
-            set_gpio_mode(TX_MODE);
+            cout << "NO ERROR" << endl;
             transmit_data(tx, CTRL_MODE, ACK);
-
-            getHeaderByte(result, headerByte);
             if (headerByte != lastHeader)
             {
                 file.write(last_rx_data);
             }
 
-            get_packet_data(result, rx_data);
             last_rx_data = rx_data;
             lastHeader = headerByte;
             counter = 0;
+            testData->received++;
         }
         else
         {
-            set_gpio_mode(TX_MODE);
+            if (err == TIMEOUT_ERROR)
+            {
+                testData->timeouts++;
+                cout << "TIMEOUT" << endl;
+            }
+            else if (err == EMPTY_PACKET_ERROR)
+            {
+                testData->received++;
+                testData->empty_packets++;
+                cout << "EMPTY PACKET" << endl;
+            }
+            else if (err == CRC_ERROR)
+            {
+                testData->received++;
+                testData->crc_failed++;
+                cout << "CRC FAIL" << endl;
+            }
+            else
+            {
+                testData->received++;
+                cout << "UNKNOWN ERROR" << endl;
+            }
+
             transmit_data(tx, CTRL_MODE, NAK_SEND);
-            counter++;
+            if (err != CRC_ERROR)
+                counter++;
         }
+
+        // if (!err && check_received_crc(result))
+        // {
+        //     set_gpio_mode(TX_MODE);
+        //     transmit_data(tx, CTRL_MODE, ACK);
+
+        //     getHeaderByte(result, headerByte);
+        //     if (headerByte != lastHeader)
+        //     {
+        //         file.write(last_rx_data);
+        //     }
+
+        //     get_packet_data(result, rx_data);
+        //     last_rx_data = rx_data;
+        //     lastHeader = headerByte;
+        //     counter = 0;
+        // }
+        // else
+        // {
+        //     set_gpio_mode(TX_MODE);
+        //     transmit_data(tx, CTRL_MODE, NAK_SEND);
+        //     counter++;
+        // }
 
         if (counter >= maxTries)
         {
