@@ -10,7 +10,6 @@ int main(int argc, char *argv[])
 
     char *mode = argv[1];
 
-    init_receiver();
     if (strcmp(mode, "rov") == 0)
         runFSM(true);
     else if (strcmp(mode, "sensor") == 0)
