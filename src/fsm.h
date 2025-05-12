@@ -157,8 +157,6 @@ public:
 
 unique_ptr<NodeState> createSendIDState();
 
-// unique_ptr<NodeState> createSendRTSState();
-
 class SendHeaderState : public NodeState
 {
 public:
@@ -185,8 +183,6 @@ public:
 
 unique_ptr<NodeState> createReadIDState();
 
-// unique_ptr<NodeState> createReadRTSState();
-
 class ReadConfirmationState : public NodeState
 {
 public:
@@ -198,8 +194,6 @@ class ReadHeaderState : public NodeState
 public:
     void handle(NodeFSM &fsm) override;
 };
-
-// unique_ptr<NodeState> createReadDataStartState();
 
 class ReadDataFrameState : public NodeState
 {

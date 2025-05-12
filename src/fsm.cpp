@@ -6,7 +6,7 @@
  * 2. Fix ReadHeader - GOOD FOR NOW
  * 3. Add back failure case for transmitting - GOOD
  * 4. Fix failure transitions - GOOD ENOUGH
- * 5. Clean/pare down FSM states
+ * 5. Clean/pare down FSM states - GOOD
  * 6. Add EOT response for all states
  * 7. Implement 2-way file transfer
  * 8. Clean/pare down FSM states
@@ -183,18 +183,6 @@ unique_ptr<NodeState> createSendIDState()
         { return createSendEOTState(); });
 }
 
-// unique_ptr<NodeState> createSendRTSState()
-// {
-//     cout << "SEND RTS" << endl;
-//     return make_unique<SendState>(
-//         RTS, CTS, CTRL_MODE,
-//         []()
-//         { return make_unique<SendHeaderState>(); },
-//         []()
-//         // { return make_unique<IdleState>(); }
-//         { return createSendIDState(); });
-// }
-
 void SendHeaderState::handle(NodeFSM &fsm)
 {
     cout << "SEND HEADER" << endl;
@@ -233,17 +221,6 @@ void SendHeaderState::handle(NodeFSM &fsm)
         cout << "stay in send header" << endl;
     }
 }
-
-// unique_ptr<NodeState> createSendDataStartState()
-// {
-//     cout << "SEND DATA START" << endl;
-//     return make_unique<SendState>(
-//         DATA_START, DATA_START, CTRL_MODE,
-//         []()
-//         { return make_unique<SendDataFrameState>(); },
-//         []()
-//         { return make_unique<SendHeaderState>(); });
-// }
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
@@ -401,17 +378,6 @@ void ReadHeaderState::handle(NodeFSM &fsm)
         }
     }
 }
-
-// unique_ptr<NodeState> createReadDataStartState()
-// {
-//     cout << "READ DATA START" << endl;
-//     return make_unique<ReadState>(
-//         DATA_START, DATA_START,
-//         []()
-//         { return make_unique<ReadDataFrameState>(); },
-//         []()
-//         { return make_unique<ReadHeaderState>(); });
-// }
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
