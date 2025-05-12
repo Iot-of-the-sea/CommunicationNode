@@ -178,22 +178,22 @@ unique_ptr<NodeState> createSendIDState()
     return make_unique<SendState>(
         NODE_ID, (NODE_ID | (1 << 7)), DATA_MODE,
         []()
-        { return createSendRTSState(); },
+        { return make_unique<SendHeaderState>(); },
         []()
         { return createSendEOTState(); });
 }
 
-unique_ptr<NodeState> createSendRTSState()
-{
-    cout << "SEND RTS" << endl;
-    return make_unique<SendState>(
-        RTS, CTS, CTRL_MODE,
-        []()
-        { return make_unique<SendHeaderState>(); },
-        []()
-        // { return make_unique<IdleState>(); }
-        { return createSendIDState(); });
-}
+// unique_ptr<NodeState> createSendRTSState()
+// {
+//     cout << "SEND RTS" << endl;
+//     return make_unique<SendState>(
+//         RTS, CTS, CTRL_MODE,
+//         []()
+//         { return make_unique<SendHeaderState>(); },
+//         []()
+//         // { return make_unique<IdleState>(); }
+//         { return createSendIDState(); });
+// }
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
@@ -216,7 +216,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
-            fsm.changeState(createSendRTSState());
+            fsm.changeState(createSendIDState());
         }
         else if (err)
         {
@@ -303,7 +303,7 @@ void EchoConfirmationState::handle(NodeFSM &fsm)
                 if (response == "y")
                 {
                     cout << "to stage read rts" << endl;
-                    fsm.changeState(createReadRTSState());
+                    fsm.changeState(createReadIDState());
                 }
                 else
                 {
@@ -329,23 +329,23 @@ unique_ptr<NodeState> createReadIDState()
     return make_unique<ReadState>(
         (NODE_ID | 0x80), (NODE_ID | 0x80),
         []()
-        { return createReadRTSState(); },
+        { return make_unique<ReadHeaderState>(); },
         []()
         { return make_unique<SearchState>(); },
         true, 10000000);
 }
 
-unique_ptr<NodeState> createReadRTSState()
-{
-    cout << "READ RTS" << endl;
-    return make_unique<ReadState>(
-        RTS, CTS,
-        []()
-        { return make_unique<ReadHeaderState>(); },
-        []()
-        { return createReadIDState(); },
-        false);
-}
+// unique_ptr<NodeState> createReadRTSState()
+// {
+//     cout << "READ RTS" << endl;
+//     return make_unique<ReadState>(
+//         RTS, CTS,
+//         []()
+//         { return make_unique<ReadHeaderState>(); },
+//         []()
+//         { return createReadIDState(); },
+//         false);
+// }
 
 // TODO: clean this up
 void ReadHeaderState::handle(NodeFSM &fsm)
@@ -357,7 +357,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     err = listen(response, &timeout);
     if (err == TIMEOUT_ERROR)
     {
-        fsm.changeState(createReadRTSState());
+        fsm.changeState(createReadIDState());
     }
     else
     {
@@ -366,13 +366,13 @@ void ReadHeaderState::handle(NodeFSM &fsm)
         {
             cout << "error" << endl;
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            fsm.changeState(createReadRTSState());
+            fsm.changeState(createReadIDState());
         }
         else if ((headerByte & 0x7F) != HEADER_DATA)
         {
             cout << "bad header byte" << endl;
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            fsm.changeState(createReadRTSState());
+            fsm.changeState(createReadIDState());
         }
         else
         {
@@ -395,8 +395,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             }
             else
             {
-                cout << "stay in read header" << endl;
-                fsm.changeState(createReadRTSState());
+                fsm.changeState(createReadIDState());
                 transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             }
         }

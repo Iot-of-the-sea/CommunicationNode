@@ -157,7 +157,7 @@ public:
 
 unique_ptr<NodeState> createSendIDState();
 
-unique_ptr<NodeState> createSendRTSState();
+// unique_ptr<NodeState> createSendRTSState();
 
 class SendHeaderState : public NodeState
 {
@@ -185,7 +185,7 @@ public:
 
 unique_ptr<NodeState> createReadIDState();
 
-unique_ptr<NodeState> createReadRTSState();
+// unique_ptr<NodeState> createReadRTSState();
 
 class ReadConfirmationState : public NodeState
 {
