@@ -9,11 +9,12 @@
  * 5. Clean/pare down FSM states - GOOD
  * 6. Add EOT response for all states - NEVERMIND
  * 7. Generalize file management
- * 8. Implement 2-way file transfer
- * 9. Improve header/metadata stuff
+ * 8. Fix no file issue
+ * 9. Implement 2-way file transfer
+ * 10. Improve header/metadata stuff
  *     - should send filename
- * 9. Refactor for constants
- * 10. Multithread transmission to speed up
+ * 11. Refactor for constants
+ * 12. Multithread transmission to speed up
  */
 
 using namespace std;
@@ -366,7 +367,6 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     timeout.reset();
     err = timeout.setDuration(100000);
 
-    cout << "starting file receive" << endl;
     err = receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
 
     // listen(response);

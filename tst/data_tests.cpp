@@ -1,7 +1,9 @@
 #include "./unity/unity.h"
 #include "../lib/data.h"
+#include <filesystem>
 
 #define TEST_FILE_NAME "./tst/testFile.txt"
+#define NESTED_TEST_PATH "./tst/tst/tst/test.txt"
 
 bool checkFileMatch(string fileName, string expectedStr)
 {
@@ -15,13 +17,16 @@ bool checkFileMatch(string fileName, string expectedStr)
 
     ifile.read(actualBuf, expectedStr.length() * 2);
     ifile.close();
-    return string(actualBuf) == expectedStr;
+    return string(actualBuf, expectedStr.length()) == expectedStr;
 }
 
 void setUp() {} // Runs before each test
 void tearDown()
 {
     remove(TEST_FILE_NAME);
+    remove(NESTED_TEST_PATH);
+    remove("./tst/tst/tst");
+    remove("./tst/tst");
 } // Runs after each test
 
 void packFrame_shouldPopulateSignal_fromEmpty()
@@ -285,7 +290,7 @@ void initFileWriter_givenEmptyCharArr_doesNotAssign()
 
 void open_and_close_noError()
 {
-    FileWriter testWriter("testFile.txt");
+    FileWriter testWriter(TEST_FILE_NAME);
     uint8_t err = testWriter.open();
     TEST_ASSERT_EQUAL(NO_ERROR, err);
     err = testWriter.close();
@@ -306,14 +311,14 @@ void close_givenNoFileName_returnsNoError()
     TEST_ASSERT_EQUAL(NO_ERROR, err);
 }
 
-void doubleOpen_givenValidFileName_returnsNoError()
+void doubleOpen_givenValidFileName_returnsIOError()
 {
     FileWriter testWriter(TEST_FILE_NAME);
     uint8_t err = testWriter.open();
     TEST_ASSERT_EQUAL(NO_ERROR, err);
 
     err = testWriter.open();
-    TEST_ASSERT_EQUAL(NO_ERROR, err);
+    TEST_ASSERT_EQUAL(IO_ERROR, err);
 }
 
 void write_givenCharArr_and_noStream_returnsIOError()
@@ -404,6 +409,44 @@ void write_uint8Arr_and_openStream_returnsNoError()
     TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
 }
 
+void open_createsNewPaths_and_returnsNoError()
+{
+    FileWriter testWriter(NESTED_TEST_PATH);
+    uint8_t testData[9] = {0X75, 0X69, 0X6E, 0X74, 0X38, 0X20, 0X61, 0X62, 0X63};
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.write(testData, 9);
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    TEST_ASSERT_TRUE(checkFileMatch(NESTED_TEST_PATH, "uint8 abc"));
+
+    filesystem::path filePath = NESTED_TEST_PATH;
+    TEST_ASSERT_TRUE(filesystem::exists(filePath));
+    TEST_ASSERT_EQUAL(0, remove(NESTED_TEST_PATH));
+}
+
+void open_withExistingFile_and_returnsIOError()
+{
+    FileWriter testWriter(TEST_FILE_NAME);
+    uint8_t err = testWriter.open();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    err = testWriter.close();
+    TEST_ASSERT_EQUAL(NO_ERROR, err);
+
+    FileWriter testWriterCopy(TEST_FILE_NAME);
+    err = testWriterCopy.open();
+    TEST_ASSERT_EQUAL(IO_ERROR, err);
+
+    TEST_ASSERT_EQUAL(0, remove(TEST_FILE_NAME));
+}
+
 void frameFromHeaderData_givenEmptyHeader_givesZeroData()
 {
     frame testFrame;
@@ -478,7 +521,7 @@ int main()
     RUN_TEST(initFileWriter_givenEmptyString_doesNotAssign);
     RUN_TEST(initFileWriter_givenEmptyCharArr_doesNotAssign);
     RUN_TEST(open_and_close_noError);
-    RUN_TEST(doubleOpen_givenValidFileName_returnsNoError);
+    RUN_TEST(doubleOpen_givenValidFileName_returnsIOError);
     RUN_TEST(open_givenNoFileName_returnsArgumentError);
     RUN_TEST(close_givenNoFileName_returnsNoError);
     RUN_TEST(write_givenCharArr_and_noStream_returnsIOError);
@@ -486,6 +529,8 @@ int main()
     RUN_TEST(write_givenMultipleCharArr_and_openStream_returnsNoError);
     RUN_TEST(write_givenString_and_openStream_returnsNoError);
     RUN_TEST(write_uint8Arr_and_openStream_returnsNoError);
+    RUN_TEST(open_createsNewPaths_and_returnsNoError);
+    RUN_TEST(open_withExistingFile_and_returnsIOError);
 
     RUN_TEST(frameFromHeaderData_givenEmptyHeader_givesZeroData);
     RUN_TEST(frameFromHeaderData_givenFullHeader_returnsArgError);

@@ -164,10 +164,31 @@ uint8_t FileWriter::open()
         return ARGUMENT_ERROR;
     }
 
+    filesystem::path filePath = _fileName;
+    if (filesystem::exists(filePath))
+    {
+        cerr << "Error: Cannot write new file. File already exists." << endl;
+        return IO_ERROR;
+    }
+
     if (!_writeStream.is_open())
     {
+        filesystem::path parentDir = filePath.parent_path();
+
+        if (!parentDir.empty())
+        {
+            std::error_code ec;
+            filesystem::create_directories(parentDir, ec);
+            if (ec)
+            {
+                std::cerr << "Error creating directories: " << ec.message() << std::endl;
+                return IO_ERROR;
+            }
+        }
+
         // append and binary mode
         _writeStream = ofstream(_fileName, std::ios::app | ios::binary);
+
         if (!_writeStream)
         {
             cerr << "Error: Cannot open file for writing!" << endl;
