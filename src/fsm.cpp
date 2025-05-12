@@ -100,6 +100,7 @@ void ReadState::handle(NodeFSM &fsm)
 // Implement state transitions
 void InitState::handle(NodeFSM &fsm)
 {
+    cout << "INIT" << endl;
 
     init_receiver();
     audioTx.init_stream();
@@ -112,11 +113,6 @@ void InitState::handle(NodeFSM &fsm)
         cout << "GPIO ERROR" << endl;
         exit(0);
     }
-
-    if (fsm.getIsROVMode())
-        cout << "ready to receive? (y/n) ";
-    else
-        cout << "sense? (y/n) ";
 
     fsm.changeState(std::make_unique<IdleState>());
 }
@@ -150,12 +146,11 @@ void IdleState::handle(NodeFSM &fsm)
     cout << "IDLE" << endl;
     if (fsm.getIsROVMode())
     {
-        fsm.changeState(std::make_unique<SearchState>());
+        fsm.changeState(make_unique<SearchState>());
     }
     else
     {
-        // fsm.changeState(createSendIDState()); // TODO: change back
-        fsm.changeState(make_unique<DoneState>()); // TODO: change back
+        fsm.changeState(createSendIDState());
     }
 }
 
@@ -168,7 +163,7 @@ void SearchState::handle(NodeFSM &fsm)
     }
     else
     {
-        cout << "stay in search" << endl;
+        fsm.changeState(make_unique<DoneState>());
     }
 }
 
@@ -331,8 +326,8 @@ unique_ptr<NodeState> createReadIDState()
         []()
         { return createReadRTSState(); },
         []()
-        { return createSendEOTState(); },
-        true, 20000000);
+        { return make_unique<SearchState>(); },
+        true, 10000000);
 }
 
 unique_ptr<NodeState> createReadRTSState()
@@ -343,19 +338,20 @@ unique_ptr<NodeState> createReadRTSState()
         []()
         { return make_unique<ReadHeaderState>(); },
         []()
-        { return make_unique<IdleState>(); },
+        { return createReadIDState(); },
         false);
 }
 
+// TODO: clean this up
 void ReadHeaderState::handle(NodeFSM &fsm)
 {
     cout << "READ HEADER" << endl;
+    timeout.reset();
     timeout.setDuration(5000000);
 
     err = listen(response, &timeout);
     if (err == TIMEOUT_ERROR)
     {
-        cout << "revert to read rts stage" << endl;
         fsm.changeState(createReadRTSState());
     }
     else
@@ -364,14 +360,12 @@ void ReadHeaderState::handle(NodeFSM &fsm)
         if (err)
         {
             cout << "error" << endl;
-            cout << "revert to read rts stage" << endl;
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             fsm.changeState(createReadRTSState());
         }
         else if ((headerByte & 0x7F) != HEADER_DATA)
         {
             cout << "bad header byte" << endl;
-            cout << "revert to read rts stage" << endl;
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             fsm.changeState(createReadRTSState());
         }
@@ -397,7 +391,6 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             else
             {
                 cout << "stay in read header" << endl;
-                cout << "revert to read rts stage" << endl;
                 fsm.changeState(createReadRTSState());
                 transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             }
@@ -407,7 +400,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createReadDataStartState()
 {
-    cout << "to read data start state" << endl;
+    cout << "READ DATA START" << endl;
     return make_unique<ReadState>(
         DATA_START, DATA_START,
         []()
@@ -423,7 +416,7 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     err = timeout.setDuration(100000);
 
     cout << "starting file receive" << endl;
-    receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
+    err = receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
 
     // listen(response);
     // err = getHeaderByte(response, headerByte);
@@ -457,8 +450,10 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     //     if (!err && headerByte == DATA_DONE)
     //     {
     // transmit_data(audioTx, CTRL_MODE, DATA_DONE);
-    cout << "to next state" << endl;
-    fsm.changeState(createReadEOTState());
+    if (err == TIMEOUT_ERROR)
+        fsm.changeState(createSendEOTState());
+    else
+        fsm.changeState(createReadEOTState());
     //     }
     //     else
     //     {
@@ -518,11 +513,11 @@ void ReadConfirmationState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createReadEOTState()
 {
-    cout << "to read eot state" << endl;
+    cout << "READ EOT" << endl;
     return make_unique<ReadState>(
         EOT, EOT,
         []()
-        { return make_unique<IdleState>(); },
+        { return make_unique<DoneState>(); },
         []()
-        { return make_unique<IdleState>(); });
+        { return make_unique<DoneState>(); });
 }

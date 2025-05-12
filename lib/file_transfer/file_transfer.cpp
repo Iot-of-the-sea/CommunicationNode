@@ -136,13 +136,14 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
         if (counter >= maxTries)
         {
             file.write(last_rx_data);
+            err = TIMEOUT_ERROR;
             break;
         }
     }
 
     file.close();
 
-    return NO_ERROR;
+    return err;
 }
 
 #if PARAMETER_TESTING
