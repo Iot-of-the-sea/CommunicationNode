@@ -311,10 +311,9 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         {
             break;
         }
-
-        file.write(last_rx_data);
     }
 
+    file.write(last_rx_data);
     file.close();
 
     return NO_ERROR;
