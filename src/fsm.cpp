@@ -10,7 +10,7 @@
  * 6. Implement 2-way file transfer
  * 7. Clean/pare down FSM states
  * 8. Refactor for constants
- * 9. Multithread transmission to speed up 
+ * 9. Multithread transmission to speed up
  */
 
 using namespace std;
@@ -48,7 +48,7 @@ void SendState::handle(NodeFSM &fsm)
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
-    if (fsm.getCount() >= _maxTries)
+    if (fsm.getCount() >= _maxTries - 1)
     {
         cout << "to fail state" << endl;
         fsm.changeState(move(_failStateFactory()));
@@ -123,9 +123,12 @@ void InitState::handle(NodeFSM &fsm)
 
 void DoneState::handle(NodeFSM &fsm)
 {
+    cout << "DONE" << endl;
 
     timeout.setDuration(30000000);
     err = listen(response, &timeout);
+    if (!err)
+        err = getHeaderByte(response, headerByte);
     if (err == TIMEOUT_ERROR)
     {
         close_receiver();
@@ -136,7 +139,8 @@ void DoneState::handle(NodeFSM &fsm)
     }
     else
     {
-        fsm.changeState(std::make_unique<IdleState>());
+        if ((headerByte & 0x7F) != EOT)
+            fsm.changeState(std::make_unique<IdleState>());
     }
 }
 
@@ -145,37 +149,20 @@ void IdleState::handle(NodeFSM &fsm)
 {
     cout << "IDLE" << endl;
     if (fsm.getIsROVMode())
-        cout << "ready to receive? (y/n) ";
-    else
-        cout << "sense? (y/n) ";
-
-    // cin >> response;
-    if (true || response == "y")
     {
-        if (fsm.getIsROVMode())
-        {
-            cout << "to stage search" << endl;
-            fsm.changeState(std::make_unique<SearchState>());
-        }
-        else
-        {
-            cout << "to stage send id" << endl;
-            fsm.changeState(createSendIDState());
-        }
+        fsm.changeState(std::make_unique<SearchState>());
     }
     else
     {
-        cout << "stay in idle" << endl;
+        // fsm.changeState(createSendIDState()); // TODO: change back
+        fsm.changeState(make_unique<DoneState>()); // TODO: change back
     }
 }
 
 void SearchState::handle(NodeFSM &fsm)
 {
-    // cout << "response? (y/n) ";
-    // cin >> response;
-
     cout << "SEARCH" << endl;
-    if (true || response == "y")
+    if (true)
     {
         fsm.changeState(createReadIDState());
     }
@@ -187,7 +174,7 @@ void SearchState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createSendIDState()
 {
-    cout << "to send id state" << endl;
+    cout << "SEND ID" << endl;
     return make_unique<SendState>(
         NODE_ID, (NODE_ID | (1 << 7)), DATA_MODE,
         []()
@@ -198,18 +185,22 @@ unique_ptr<NodeState> createSendIDState()
 
 unique_ptr<NodeState> createSendRTSState()
 {
-    cout << "to send rts state" << endl;
+    cout << "SEND RTS" << endl;
     return make_unique<SendState>(
         RTS, CTS, CTRL_MODE,
         []()
         { return make_unique<SendHeaderState>(); },
         []()
-        { return make_unique<IdleState>(); });
+        // { return make_unique<IdleState>(); }
+        { return createSendIDState(); });
 }
 
 void SendHeaderState::handle(NodeFSM &fsm)
 {
-    cout << "to send header state" << endl;
+    cout << "SEND HEADER" << endl;
+    timeout.reset();
+    timeout.setDuration(1000000);
+
     uint32_t fileSize = getFileSize("./lib/test.txt");
     headerData header = {NODE_ID, fileSize};
     err = packetFromHeaderData(packet, header);
@@ -218,8 +209,6 @@ void SendHeaderState::handle(NodeFSM &fsm)
         transmit_data(audioTx, DATA_MODE, HEADER_DATA,
                       packet.data(), packet.size());
 
-        timeout.setDuration(1000000);
-
         err = listen(response, &timeout);
 
         if (!err)
@@ -227,18 +216,15 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
         if (fsm.getCount() >= 10) // simplify this control logic somehow
         {
-            cout << "return to send rts state" << endl;
             fsm.changeState(createSendRTSState());
         }
         else if (err)
         {
             if (err == TIMEOUT_ERROR)
                 fsm.incrCount();
-            cout << "stay in send header stage" << endl;
         }
         else if (headerByte == (HEADER_DATA | 0x80))
         {
-            cout << "to stage send data start" << endl;
             fsm.changeState(createSendDataStartState());
         }
     }
@@ -250,7 +236,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
 
 unique_ptr<NodeState> createSendDataStartState()
 {
-    cout << "to send data start state" << endl;
+    cout << "SEND DATA START" << endl;
     return make_unique<SendState>(
         DATA_START, DATA_START, CTRL_MODE,
         []()
@@ -263,28 +249,29 @@ void SendDataFrameState::handle(NodeFSM &fsm)
 {
     timeout.reset();
     timeout.setDuration(100000);
-    cout << "State: SEND DATA FRAME" << endl;
-    transmit_file(audioTx, "./lib/test.txt", timeout, 20);
+    cout << "SEND DATA FRAME" << endl;
+    err = transmit_file(audioTx, "./lib/test.txt", timeout, 20);
+    if (err)
+        cout << "TIMED OUT" << endl;
 
-    cout << "to stage echo confirmation" << endl;
     fsm.changeState(createSendDataDoneState());
 }
 
 unique_ptr<NodeState> createSendDataDoneState()
 {
-    cout << "to send data done state" << endl;
+    cout << "SEND DATA DONE" << endl;
     return make_unique<SendState>(
         DATA_DONE, DATA_DONE, CTRL_MODE,
         // std::make_unique<EchoConfirmationState>(), TODO: change this back
         []()
         { return createSendEOTState(); },
         []()
-        { return make_unique<IdleState>(); });
+        { return createSendEOTState(); });
 }
 
 unique_ptr<NodeState> createSendEOTState()
 {
-    cout << "to send eot state" << endl;
+    cout << "SEND EOT" << endl;
     return make_unique<SendState>(
         EOT, EOT, CTRL_MODE,
         []()

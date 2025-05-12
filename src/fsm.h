@@ -149,12 +149,6 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class CalibrateState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
-
 class SearchState : public NodeState
 {
 public:
