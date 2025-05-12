@@ -111,13 +111,14 @@ private:
 
 public:
     NodeFSM() : _state(std::make_unique<InitState>()), _rov_mode(true),
-                _counter(0), _tx_file(nullptr) {}
+                _counter(0), _tx_file("") {}
 
     NodeFSM(bool rov_mode, const char *txFile) : _state(std::make_unique<InitState>()),
                                                  _rov_mode(rov_mode), _counter(0), _tx_file(txFile)
     {
         cout << "Mode: " << (_rov_mode ? "ROV" : "SENSOR") << endl;
-        cout << "File: " << _tx_file << endl;
+        if (_tx_file)
+            cout << "File: " << _tx_file << endl;
     }
 
     void changeState(std::unique_ptr<NodeState> newState)

@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 
     char *mode = argv[1];
 
-    const char *file = (argc == 3) ? argv[2] : nullptr;
+    const char *file = (argc == 3) ? argv[2] : "";
 
     if (strcmp(mode, "rov") == 0)
         runFSM(true, file);
