@@ -453,7 +453,7 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     //     err = getHeaderByte(response, headerByte);
     //     if (!err && headerByte == DATA_DONE)
     //     {
-    // transmit_data(audioTx, CTRL_MODE, DATA_DONE);
+    transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     if (err == TIMEOUT_ERROR)
         fsm.changeState(createSendEOTState());
     else
