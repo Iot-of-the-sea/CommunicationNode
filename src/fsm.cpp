@@ -467,53 +467,53 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     // }
 }
 
-void ReadConfirmationState::handle(NodeFSM &fsm)
-{
-    cout << "max tries? (y/n) ";
-    cin >> response;
+// void ReadConfirmationState::handle(NodeFSM &fsm)
+// {
+//     cout << "max tries? (y/n) ";
+//     cin >> response;
 
-    if (response == "y")
-    {
-        cout << "confirmation code" << endl;
-        cout << "stay in read confirmation" << endl;
-    }
-    else
-    {
-        cout << "match? (y/n) ";
-        cin >> response;
+//     if (response == "y")
+//     {
+//         cout << "confirmation code" << endl;
+//         cout << "stay in read confirmation" << endl;
+//     }
+//     else
+//     {
+//         cout << "match? (y/n) ";
+//         cin >> response;
 
-        if (response == "y")
-        {
-            transmit_data(audioTx, CTRL_MODE, ACK);
-            if (fsm.getIsROVMode())
-            {
-                cout << "transmit? (y/n) ";
-                cin >> response;
+//         if (response == "y")
+//         {
+//             transmit_data(audioTx, CTRL_MODE, ACK);
+//             if (fsm.getIsROVMode())
+//             {
+//                 cout << "transmit? (y/n) ";
+//                 cin >> response;
 
-                if (response == "y")
-                {
-                    cout << "to stage send rts" << endl;
-                    fsm.changeState(createSendRTSState());
-                }
-                else
-                {
-                    cout << "to stage read eot" << endl;
-                    fsm.changeState(createSendEOTState());
-                }
-            }
-            else
-            {
-                cout << "to stage send EOT" << endl;
-                fsm.changeState(createSendEOTState());
-            }
-        }
-        else
-        {
-            transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            cout << "stay in read confirmation" << endl;
-        }
-    }
-}
+//                 if (response == "y")
+//                 {
+//                     cout << "to stage send rts" << endl;
+//                     fsm.changeState(createSendRTSState());
+//                 }
+//                 else
+//                 {
+//                     cout << "to stage read eot" << endl;
+//                     fsm.changeState(createSendEOTState());
+//                 }
+//             }
+//             else
+//             {
+//                 cout << "to stage send EOT" << endl;
+//                 fsm.changeState(createSendEOTState());
+//             }
+//         }
+//         else
+//         {
+//             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+//             cout << "stay in read confirmation" << endl;
+//         }
+//     }
+// }
 
 unique_ptr<NodeState> createReadEOTState()
 {
