@@ -225,7 +225,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
         }
         else if (headerByte == (HEADER_DATA | 0x80))
         {
-            fsm.changeState(createSendDataStartState());
+            fsm.changeState(make_unique<SendDataFrameState>());
         }
     }
     else
@@ -234,16 +234,16 @@ void SendHeaderState::handle(NodeFSM &fsm)
     }
 }
 
-unique_ptr<NodeState> createSendDataStartState()
-{
-    cout << "SEND DATA START" << endl;
-    return make_unique<SendState>(
-        DATA_START, DATA_START, CTRL_MODE,
-        []()
-        { return make_unique<SendDataFrameState>(); },
-        []()
-        { return make_unique<SendHeaderState>(); });
-}
+// unique_ptr<NodeState> createSendDataStartState()
+// {
+//     cout << "SEND DATA START" << endl;
+//     return make_unique<SendState>(
+//         DATA_START, DATA_START, CTRL_MODE,
+//         []()
+//         { return make_unique<SendDataFrameState>(); },
+//         []()
+//         { return make_unique<SendHeaderState>(); });
+// }
 
 void SendDataFrameState::handle(NodeFSM &fsm)
 {
@@ -391,7 +391,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
                 transmit_data(audioTx, DATA_MODE, HEADER_DATA);
                 cout << "to stage read data start" << endl;
-                fsm.changeState(createReadDataStartState());
+                fsm.changeState(make_unique<ReadDataFrameState>());
             }
             else
             {
@@ -402,16 +402,16 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     }
 }
 
-unique_ptr<NodeState> createReadDataStartState()
-{
-    cout << "READ DATA START" << endl;
-    return make_unique<ReadState>(
-        DATA_START, DATA_START,
-        []()
-        { return make_unique<ReadDataFrameState>(); },
-        []()
-        { return make_unique<ReadHeaderState>(); });
-}
+// unique_ptr<NodeState> createReadDataStartState()
+// {
+//     cout << "READ DATA START" << endl;
+//     return make_unique<ReadState>(
+//         DATA_START, DATA_START,
+//         []()
+//         { return make_unique<ReadDataFrameState>(); },
+//         []()
+//         { return make_unique<ReadHeaderState>(); });
+// }
 
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
