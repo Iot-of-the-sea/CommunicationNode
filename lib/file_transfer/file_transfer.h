@@ -14,7 +14,7 @@
 #include "../../../tst/testlib/audioreceiver_test.h"
 #endif
 
-uint8_t transmit_file(AudioTransmitter &tx, const char *file, TimeoutHandler &timeout);
+uint8_t transmit_file(AudioTransmitter &tx, const char *fileName, TimeoutHandler &timeout, uint16_t maxTries);
 
 uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &timeout, uint16_t maxTries);
 

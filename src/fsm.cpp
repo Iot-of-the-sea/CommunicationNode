@@ -4,12 +4,13 @@
  * TODO:
  * 1. Implement DoneState - DONE
  * 2. Fix ReadHeader - GOOD FOR NOW
- * 2. Add back failure case for transmitting
- * 3. Fix failure transitions
- * 3. Add EOT response for all states
- * 3. Implement 2-way file transfer
- * 4. Clean/pare down FSM states
- * 5. Refactor for constants
+ * 3. Add back failure case for transmitting - GOOD
+ * 4. Fix failure transitions
+ * 5. Add EOT response for all states
+ * 6. Implement 2-way file transfer
+ * 7. Clean/pare down FSM states
+ * 8. Refactor for constants
+ * 9. Multithread transmission to speed up 
  */
 
 using namespace std;
@@ -263,7 +264,7 @@ void SendDataFrameState::handle(NodeFSM &fsm)
     timeout.reset();
     timeout.setDuration(100000);
     cout << "State: SEND DATA FRAME" << endl;
-    transmit_file(audioTx, "./lib/test.txt", timeout);
+    transmit_file(audioTx, "./lib/test.txt", timeout, 20);
 
     cout << "to stage echo confirmation" << endl;
     fsm.changeState(createSendDataDoneState());
@@ -435,7 +436,7 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     err = timeout.setDuration(100000);
 
     cout << "starting file receive" << endl;
-    receiveFile(audioTx, "./tst/testFile.txt", timeout, 10);
+    receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
 
     // listen(response);
     // err = getHeaderByte(response, headerByte);
