@@ -5,12 +5,13 @@
  * 1. Implement DoneState - DONE
  * 2. Fix ReadHeader - GOOD FOR NOW
  * 3. Add back failure case for transmitting - GOOD
- * 4. Fix failure transitions
- * 5. Add EOT response for all states
- * 6. Implement 2-way file transfer
- * 7. Clean/pare down FSM states
- * 8. Refactor for constants
- * 9. Multithread transmission to speed up
+ * 4. Fix failure transitions - GOOD ENOUGH
+ * 5. Clean/pare down FSM states
+ * 6. Add EOT response for all states
+ * 7. Implement 2-way file transfer
+ * 8. Clean/pare down FSM states
+ * 9. Refactor for constants
+ * 10. Multithread transmission to speed up
  */
 
 using namespace std;
@@ -45,6 +46,7 @@ void SendState::handle(NodeFSM &fsm)
 {
     transmit_data(audioTx, _mode, _transmit_code);
 
+    timeout.reset();
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
@@ -70,6 +72,7 @@ void SendState::handle(NodeFSM &fsm)
 
 void ReadState::handle(NodeFSM &fsm)
 {
+    timeout.reset();
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
@@ -121,6 +124,7 @@ void DoneState::handle(NodeFSM &fsm)
 {
     cout << "DONE" << endl;
 
+    timeout.reset();
     timeout.setDuration(30000000);
     err = listen(response, &timeout);
     if (!err)
@@ -157,14 +161,15 @@ void IdleState::handle(NodeFSM &fsm)
 void SearchState::handle(NodeFSM &fsm)
 {
     cout << "SEARCH" << endl;
-    if (true)
-    {
-        fsm.changeState(createReadIDState());
-    }
-    else
-    {
+
+    timeout.reset();
+    timeout.setDuration(30000000);
+    err = listen(response, &timeout);
+
+    if (err == TIMEOUT_ERROR)
         fsm.changeState(make_unique<DoneState>());
-    }
+    else
+        fsm.changeState(createReadIDState());
 }
 
 unique_ptr<NodeState> createSendIDState()
