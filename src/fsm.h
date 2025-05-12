@@ -108,13 +108,15 @@ private:
     bool _rov_mode;
     uint16_t _counter;
     const char *_tx_file;
+    uint32_t _node_id;
 
 public:
     NodeFSM() : _state(std::make_unique<InitState>()), _rov_mode(true),
-                _counter(0), _tx_file("") {}
+                _counter(0), _tx_file(""), _node_id(0) {}
 
     NodeFSM(bool rov_mode, const char *txFile) : _state(std::make_unique<InitState>()),
-                                                 _rov_mode(rov_mode), _counter(0), _tx_file(txFile)
+                                                 _rov_mode(rov_mode), _counter(0),
+                                                 _tx_file(txFile), _node_id(0)
     {
         cout << "Mode: " << (_rov_mode ? "ROV" : "SENSOR") << endl;
         if (_tx_file)
@@ -132,16 +134,11 @@ public:
         _state = std::move(newState);
     }
 
-    void update()
-    {
-        _state->handle(*this);
-    }
+    void update() { _state->handle(*this); }
 
-    bool getIsROVMode()
-    {
-        return _rov_mode;
-    }
+    void setNodeID(uint32_t newID) { _node_id = newID; }
 
+    bool getIsROVMode() { return _rov_mode; }
     uint16_t getCount() { return _counter; }
     const char *getFileName() { return _tx_file; }
     void incrCount() { _counter++; }

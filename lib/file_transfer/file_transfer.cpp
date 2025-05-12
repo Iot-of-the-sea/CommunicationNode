@@ -73,7 +73,7 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
     uint16_t counter = 0;
 
     cout << timeout.getDuration() << endl;
-    FileWriter file("./tst/testFile.txt");
+    FileWriter file(fileName);
     err = file.open();
     if (err)
     {

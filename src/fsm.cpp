@@ -11,10 +11,12 @@
  * 7. Generalize file management
  * 8. Fix no file issue
  * 9. Implement 2-way file transfer
- * 10. Improve header/metadata stuff
+ * 10. Improve read ID to be more generalized
+ * 11. Improve header/metadata stuff
+ *     - send file type
  *     - should send filename
- * 11. Refactor for constants
- * 12. Multithread transmission to speed up
+ * 12. Refactor for constants
+ * 13. Multithread transmission to speed up
  */
 
 using namespace std;
@@ -33,6 +35,8 @@ frame nodeFrame = {
 
 vector<uint8_t> packet;
 uint8_t confirmation = 0;
+
+static volatile uint32_t nodeID;
 
 int runFSM(bool rovMode, const char *txFile)
 {
@@ -152,6 +156,7 @@ void IdleState::handle(NodeFSM &fsm)
     }
     else
     {
+        nodeID = NODE_ID;
         fsm.changeState(createSendIDState());
     }
 }
@@ -297,6 +302,7 @@ unique_ptr<NodeState> createSendEOTState()
 unique_ptr<NodeState> createReadIDState()
 {
     cout << "READ ID" << endl;
+    nodeID = NODE_ID;
     return make_unique<ReadState>(
         (NODE_ID | 0x80), (NODE_ID | 0x80),
         []()
@@ -361,13 +367,25 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     }
 }
 
+string getCurrentTimeString()
+{
+    time_t now = std::time(nullptr);
+    tm *now_tm = std::localtime(&now);
+
+    ostringstream oss;
+    oss << put_time(now_tm, "%Y-%m-%d_%H-%M-%S");
+    return oss.str();
+}
+
 void ReadDataFrameState::handle(NodeFSM &fsm)
 {
-
     timeout.reset();
     err = timeout.setDuration(100000);
 
-    err = receiveFile(audioTx, "./tst/testFile.txt", timeout, 20);
+    string writeTarget = "./received_files/node" + to_string(nodeID) + "_" + getCurrentTimeString() + ".txt";
+    cout << writeTarget << endl;
+
+    err = receiveFile(audioTx, writeTarget.c_str(), timeout, 20);
 
     // listen(response);
     // err = getHeaderByte(response, headerByte);
