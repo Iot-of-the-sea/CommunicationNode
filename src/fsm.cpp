@@ -7,9 +7,11 @@
  * 3. Add back failure case for transmitting - GOOD
  * 4. Fix failure transitions - GOOD ENOUGH
  * 5. Clean/pare down FSM states - GOOD
- * 6. Add EOT response for all states
- * 7. Implement 2-way file transfer
- * 8. Clean/pare down FSM states
+ * 6. Add EOT response for all states - NEVERMIND
+ * 7. Generalize file management
+ * 8. Implement 2-way file transfer
+ * 9. Improve header/metadata stuff
+ *     - should send filename
  * 9. Refactor for constants
  * 10. Multithread transmission to speed up
  */
@@ -31,9 +33,9 @@ frame nodeFrame = {
 vector<uint8_t> packet;
 uint8_t confirmation = 0;
 
-int runFSM(bool rovMode)
+int runFSM(bool rovMode, const char *txFile)
 {
-    NodeFSM node(rovMode);
+    NodeFSM node(rovMode, txFile);
 
     while (true)
     {
@@ -52,7 +54,6 @@ void SendState::handle(NodeFSM &fsm)
 
     if (fsm.getCount() >= _maxTries - 1)
     {
-        cout << "to fail state" << endl;
         fsm.changeState(move(_failStateFactory()));
         return;
     }
@@ -62,7 +63,6 @@ void SendState::handle(NodeFSM &fsm)
 
     if (!err && headerByte == _expected_receive)
     {
-        cout << "to next state" << endl;
         fsm.changeState(move(_nextStateFactory()));
         return;
     }
@@ -78,7 +78,6 @@ void ReadState::handle(NodeFSM &fsm)
 
     if (err == TIMEOUT_ERROR)
     {
-        cout << "to fail state" << endl;
         fsm.changeState(_failStateFactory());
     }
     else
@@ -87,14 +86,12 @@ void ReadState::handle(NodeFSM &fsm)
         if (!err && headerByte == _expected_receive)
         {
             transmit_data(audioTx, CTRL_MODE, _transmit_code);
-            cout << "to next state" << endl;
             fsm.changeState(move(_nextStateFactory()));
         }
         else
         {
             if (_send_nak)
                 transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            cout << "to fail state" << endl;
             fsm.changeState(_failStateFactory());
         }
     }
@@ -189,7 +186,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
     timeout.reset();
     timeout.setDuration(1000000);
 
-    uint32_t fileSize = getFileSize("./lib/test.txt");
+    uint32_t fileSize = getFileSize(fsm.getFileName());
     headerData header = {NODE_ID, fileSize};
     err = packetFromHeaderData(packet, header);
     if (!err)
@@ -216,10 +213,6 @@ void SendHeaderState::handle(NodeFSM &fsm)
             fsm.changeState(make_unique<SendDataFrameState>());
         }
     }
-    else
-    {
-        cout << "stay in send header" << endl;
-    }
 }
 
 void SendDataFrameState::handle(NodeFSM &fsm)
@@ -227,7 +220,7 @@ void SendDataFrameState::handle(NodeFSM &fsm)
     timeout.reset();
     timeout.setDuration(100000);
     cout << "SEND DATA FRAME" << endl;
-    err = transmit_file(audioTx, "./lib/test.txt", timeout, 20);
+    err = transmit_file(audioTx, fsm.getFileName(), timeout, 20);
     if (err)
         cout << "TIMED OUT" << endl;
 
@@ -258,47 +251,47 @@ unique_ptr<NodeState> createSendEOTState()
         1000000, 5);
 }
 
-void EchoConfirmationState::handle(NodeFSM &fsm)
-{
-    cout << "waiting for confirmation? (y/n) ";
-    cin >> response;
-    if (response == "n")
-    {
-        listen(response);
-        if (isAck(response))
-        {
-            if (fsm.getIsROVMode())
-            {
-                cout << "to stage read eot" << endl;
-                fsm.changeState(createReadEOTState());
-            }
-            else
-            {
-                cout << "even? (y/n) ";
-                cin >> response;
+// void EchoConfirmationState::handle(NodeFSM &fsm)
+// {
+//     cout << "waiting for confirmation? (y/n) ";
+//     cin >> response;
+//     if (response == "n")
+//     {
+//         listen(response);
+//         if (isAck(response))
+//         {
+//             if (fsm.getIsROVMode())
+//             {
+//                 cout << "to stage read eot" << endl;
+//                 fsm.changeState(createReadEOTState());
+//             }
+//             else
+//             {
+//                 cout << "even? (y/n) ";
+//                 cin >> response;
 
-                if (response == "y")
-                {
-                    cout << "to stage read rts" << endl;
-                    fsm.changeState(createReadIDState());
-                }
-                else
-                {
-                    cout << "to stage send eot" << endl;
-                    fsm.changeState(createSendEOTState());
-                }
-            }
-        }
-        else
-        {
-            cout << "stay in echo confirmation" << endl;
-        }
-    }
-    else
-    {
-        cout << "stay in echo confirmation" << endl;
-    }
-}
+//                 if (response == "y")
+//                 {
+//                     cout << "to stage read rts" << endl;
+//                     fsm.changeState(createReadIDState());
+//                 }
+//                 else
+//                 {
+//                     cout << "to stage send eot" << endl;
+//                     fsm.changeState(createSendEOTState());
+//                 }
+//             }
+//         }
+//         else
+//         {
+//             cout << "stay in echo confirmation" << endl;
+//         }
+//     }
+//     else
+//     {
+//         cout << "stay in echo confirmation" << endl;
+//     }
+// }
 
 unique_ptr<NodeState> createReadIDState()
 {
@@ -311,18 +304,6 @@ unique_ptr<NodeState> createReadIDState()
         { return make_unique<SearchState>(); },
         true, 10000000);
 }
-
-// unique_ptr<NodeState> createReadRTSState()
-// {
-//     cout << "READ RTS" << endl;
-//     return make_unique<ReadState>(
-//         RTS, CTS,
-//         []()
-//         { return make_unique<ReadHeaderState>(); },
-//         []()
-//         { return createReadIDState(); },
-//         false);
-// }
 
 // TODO: clean this up
 void ReadHeaderState::handle(NodeFSM &fsm)

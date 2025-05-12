@@ -107,15 +107,17 @@ private:
     std::unique_ptr<NodeState> _state;
     bool _rov_mode;
     uint16_t _counter;
+    const char *_tx_file;
 
 public:
     NodeFSM() : _state(std::make_unique<InitState>()), _rov_mode(true),
-                _counter(0) {}
+                _counter(0), _tx_file(nullptr) {}
 
-    NodeFSM(bool rov_mode) : _state(std::make_unique<InitState>()),
-                             _rov_mode(rov_mode), _counter(0)
+    NodeFSM(bool rov_mode, const char *txFile) : _state(std::make_unique<InitState>()),
+                                                 _rov_mode(rov_mode), _counter(0), _tx_file(txFile)
     {
-        cout << "selected mode: " << _rov_mode << endl;
+        cout << "Mode: " << (_rov_mode ? "ROV" : "SENSOR") << endl;
+        cout << "File: " << _tx_file << endl;
     }
 
     void changeState(std::unique_ptr<NodeState> newState)
@@ -140,6 +142,7 @@ public:
     }
 
     uint16_t getCount() { return _counter; }
+    const char *getFileName() { return _tx_file; }
     void incrCount() { _counter++; }
 };
 
@@ -203,6 +206,6 @@ public:
 
 unique_ptr<NodeState> createReadEOTState();
 
-int runFSM(bool rovMode);
+int runFSM(bool rovMode, const char *txFile);
 
 #endif // __FSM__
