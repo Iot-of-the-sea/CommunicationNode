@@ -37,7 +37,8 @@ typedef struct
 } RxTestData;
 
 uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
-                           TimeoutHandler &timeout, TxTestData *testData);
+                           TimeoutHandler &timeout, uint16_t maxTries,
+                           TxTestData *testData);
 
 uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
                          TimeoutHandler &timeout, uint16_t maxTries,

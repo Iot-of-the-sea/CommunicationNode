@@ -135,7 +135,8 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
 
 #if PARAMETER_TESTING
 uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
-                           TimeoutHandler &timeout, TxTestData *testData)
+                           TimeoutHandler &timeout, uint16_t maxTries,
+                           TxTestData *testData)
 {
     testData->sent = 0;
     testData->ack = 0;
@@ -154,6 +155,8 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
     uint8_t frameNum = 0;
     uint8_t err;
 
+    uint8_t timeoutCount = 0;
+
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
     {
@@ -164,7 +167,7 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
 
     string chunkStr;
     uint16_t chunkLen;
-    while (frameNum < chunks.size())
+    while (frameNum < chunks.size() && timeoutCount < maxTries)
     {
         chunkStr = chunks.at(frameNum);
         chunkLen = chunkStr.length();
@@ -187,6 +190,15 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
                 testData->nak++;
         }
 
+        if (err == TIMEOUT_ERROR)
+        {
+            timeoutCount++;
+        }
+        else
+        {
+            timeoutCount = 0;
+        }
+
         if (!err && isAck(response))
         {
             cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
@@ -202,7 +214,7 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
     ifile.close();     // Close the file
     delete[] frameBuf; // TODO: check this
 
-    return 0;
+    return err;
 }
 
 // TODO: test this

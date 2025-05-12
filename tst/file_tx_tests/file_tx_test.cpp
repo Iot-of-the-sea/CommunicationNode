@@ -15,7 +15,7 @@ int main()
     init_pins("toggle");
 
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    transmit_file_test(audioTx, "./tst/test.txt", timeout, &txTestData);
+    transmit_file_test(audioTx, "./tst/test.txt", timeout, 10, &txTestData);
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
