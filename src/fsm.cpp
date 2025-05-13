@@ -361,14 +361,17 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             err = get_packet_data(response, headerDataBytes);
             if (!err && (headerByte & 0x7F) == HEADER_DATA && headerDataBytes.size() < 9)
             {
-                uint16_t nodeId = (uint8_t)response.at(1) | ((uint8_t)response.at(2) << 4);
+                // little endian
+                uint16_t nodeId = 0 | (uint8_t)headerDataBytes.at(1) | ((uint8_t)headerDataBytes.at(2) << 8);
                 uint32_t fileSize = 0;
                 for (size_t i = 0; i < 4; i++)
                 {
-                    fileSize |= (uint8_t)response.at(3 + i) << (4 * i);
+                    fileSize |= (uint8_t)headerDataBytes.at(3 + i) << (4 * i);
                 }
 
-                fileHeaderData = {nodeId, fileSize};
+                fileHeaderData = {
+                    .nodeId = nodeId,
+                    .fileSizeBytes = fileSize};
                 cout << "Node ID: " << (unsigned int)fileHeaderData.nodeId << endl;
                 cout << "File Size: " << (unsigned int)fileHeaderData.fileSizeBytes << endl;
 
@@ -411,10 +414,13 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     timeout.reset();
     err = timeout.setDuration(100000);
 
-    if (fileHeaderData.fileSizeBytes > 0) {
+    if (fileHeaderData.fileSizeBytes > 0)
+    {
         writeTarget = "./received_files/node" + to_string(nodeID) + "_" + getCurrentTimeString() + ".txt";
         err = receiveFile(audioTx, writeTarget.c_str(), timeout, 20);
-    } else {
+    }
+    else
+    {
         err = listen(response, &timeout); // this is scuffed a little
     }
 
