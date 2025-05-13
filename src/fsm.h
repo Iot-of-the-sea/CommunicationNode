@@ -164,7 +164,7 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-// unique_ptr<NodeState> createSendDataStartState();
+unique_ptr<NodeState> createSendDataStartState();
 
 class SendDataFrameState : public NodeState
 {
@@ -195,6 +195,8 @@ class ReadHeaderState : public NodeState
 public:
     void handle(NodeFSM &fsm) override;
 };
+
+unique_ptr<NodeState> createReadDataStartState();
 
 class ReadDataFrameState : public NodeState
 {

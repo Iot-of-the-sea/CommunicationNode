@@ -8,7 +8,7 @@
  * 4. Fix failure transitions - GOOD ENOUGH
  * 5. Clean/pare down FSM states - GOOD
  * 6. Add EOT response for all states - NEVERMIND
- * 7. Generalize file management
+ * 7. Generalize file management - GOOD ENOUGH FOR NOW (but still have to fix)
  * 8. Fix no file issue
  * 9. Implement 2-way file transfer
  * 10. Improve read ID to be more generalized
@@ -216,9 +216,20 @@ void SendHeaderState::handle(NodeFSM &fsm)
         }
         else if (headerByte == (HEADER_DATA | 0x80))
         {
-            fsm.changeState(make_unique<SendDataFrameState>());
+            fsm.changeState(createSendDataStartState());
         }
     }
+}
+
+unique_ptr<NodeState> createSendDataStartState()
+{
+    cout << "SEND DATA START" << endl;
+    return make_unique<SendState>(
+        DATA_START, DATA_START, CTRL_MODE,
+        []()
+        { return make_unique<SendDataFrameState>(); },
+        []()
+        { return make_unique<SendHeaderState>(); });
 }
 
 void SendDataFrameState::handle(NodeFSM &fsm)
@@ -356,7 +367,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
 
                 transmit_data(audioTx, DATA_MODE, HEADER_DATA);
                 cout << "to stage read data start" << endl;
-                fsm.changeState(make_unique<ReadDataFrameState>());
+                fsm.changeState(createReadDataStartState());
             }
             else
             {
@@ -367,6 +378,18 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     }
 }
 
+unique_ptr<NodeState> createReadDataStartState()
+{
+    cout << "READ DATA START" << endl;
+    return make_unique<ReadState>(
+        DATA_START, DATA_START,
+        []()
+        { return make_unique<ReadDataFrameState>(); },
+        []()
+        { return make_unique<ReadHeaderState>(); });
+}
+
+// TODO: move this somewhere else
 string getCurrentTimeString()
 {
     time_t now = std::time(nullptr);
