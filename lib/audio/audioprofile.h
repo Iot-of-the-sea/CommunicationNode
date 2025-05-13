@@ -2,6 +2,11 @@
 #ifndef __AUDIO_PROFILE__
 #define __AUDIO_PROFILE__
 
+#include <iostream>
+#include <vector>
+#include <stdexcept>
+#include <cmath>
+
 class AudioProfile
 {
 private:
@@ -11,10 +16,11 @@ private:
     double slice;
     double low;
     double high;
+    double stop;
 
 public:
     // Constructor
-    AudioProfile(double bit_time_us, const std::vector<double> &freq_list,
+    AudioProfile(double bit_time_us, const std::vector<double> &freq_list, double stop,
                  double sample_rate = 192000, double amplitude = 1.0);
 
     // Getter for sample rate
@@ -29,6 +35,7 @@ public:
     double get_bit_time();
     double get_low();
     double get_high();
+    double get_stop();
     double get_amplitude();
 
     // Print function for debugging

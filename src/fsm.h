@@ -2,15 +2,37 @@
 #ifndef __FSM__
 #define __FSM__
 
+#include "../lib/config.h"
+
 #include <iostream>
 #include <memory>
 #include <thread>
 #include <string>
 
+#include "../lib/file_transfer/file_transfer.h"
+#include "../lib/audio/audiotransmitter.h"
+#include "../lib//audio/audioprofile.h"
+#include "../lib/protocol.h"
+#include "../lib/control.h"
+#include <fstream>
+#include <unistd.h>
+#include <string.h>
+#include <functional>
+
+#if DEPLOYED
+#include "../lib/audio/audiorx/audioreceiver.h"
+#else
+#include "../tst/testlib/audioreceiver_test.h"
+#endif
+
+#if LINUX
+#include "pa_linux_alsa.h"
+#endif
+
 using namespace std;
 
 class NodeFSM;
-class IdleState;
+class InitState;
 
 // Abstract base class for all states
 class NodeState
@@ -20,8 +42,59 @@ public:
     virtual ~NodeState() = default;
 };
 
+class SendState : public NodeState
+{
+private:
+    uint8_t _transmit_code;
+    uint8_t _expected_receive;
+    uint8_t _mode;
+    function<unique_ptr<NodeState>()> _nextStateFactory;
+    function<unique_ptr<NodeState>()> _failStateFactory;
+    uint32_t _timeout_us;
+    uint16_t _maxTries;
+
+public:
+    SendState(uint8_t transmit_code, uint8_t expected_receive, uint8_t mode,
+              function<unique_ptr<NodeState>()> nextFactory,
+              function<unique_ptr<NodeState>()> failFactory,
+              uint32_t timeout_us = 1000000, uint16_t maxTries = 10)
+        : _transmit_code(transmit_code), _expected_receive(expected_receive), _mode(mode),
+          _nextStateFactory(move(nextFactory)), _failStateFactory(move(failFactory)),
+          _timeout_us(timeout_us), _maxTries(maxTries) {};
+
+    void handle(NodeFSM &fsm) override;
+};
+
+class ReadState : public NodeState
+{
+private:
+    uint8_t _expected_receive;
+    uint8_t _transmit_code;
+    std::function<std::unique_ptr<NodeState>()> _nextStateFactory;
+    std::function<std::unique_ptr<NodeState>()> _failStateFactory;
+    bool _send_nak;
+    uint32_t _timeout_us;
+
+public:
+    ReadState(uint8_t expected_receive, uint8_t transmit_code,
+              function<unique_ptr<NodeState>()> nextFactory,
+              function<unique_ptr<NodeState>()> failFactory,
+              bool send_nak = true, uint32_t timeout_us = 2500000)
+        : _expected_receive(expected_receive), _transmit_code(transmit_code),
+          _nextStateFactory(move(nextFactory)), _failStateFactory(move(failFactory)),
+          _send_nak(send_nak), _timeout_us(timeout_us) {};
+
+    void handle(NodeFSM &fsm) override;
+};
+
 // Concrete states
-class IdleState : public NodeState
+class InitState : public NodeState
+{
+public:
+    void handle(NodeFSM &fsm) override;
+};
+
+class DoneState : public NodeState
 {
 public:
     void handle(NodeFSM &fsm) override;
@@ -33,32 +106,45 @@ class NodeFSM
 private:
     std::unique_ptr<NodeState> _state;
     bool _rov_mode;
+    uint16_t _counter;
+    const char *_tx_file;
+    uint32_t _node_id;
 
 public:
-    NodeFSM() : _state(std::make_unique<IdleState>()), _rov_mode(true) {}
+    NodeFSM() : _state(std::make_unique<InitState>()), _rov_mode(true),
+                _counter(0), _tx_file(""), _node_id(0) {}
 
-    NodeFSM(bool rov_mode) : _state(std::make_unique<IdleState>()), _rov_mode(rov_mode)
+    NodeFSM(bool rov_mode, const char *txFile) : _state(std::make_unique<InitState>()),
+                                                 _rov_mode(rov_mode), _counter(0),
+                                                 _tx_file(txFile), _node_id(0)
     {
-        cout << _rov_mode << endl;
+        cout << "Mode: " << (_rov_mode ? "ROV" : "SENSOR") << endl;
+        if (_tx_file)
+            cout << "File: " << _tx_file << endl;
     }
 
     void changeState(std::unique_ptr<NodeState> newState)
     {
+        cout << "NEW STATE" << endl;
+        _counter = 0;
+        if (newState == nullptr)
+        {
+            cerr << "nullptr" << endl;
+        }
         _state = std::move(newState);
     }
 
-    void update()
-    {
-        _state->handle(*this);
-    }
+    void update() { _state->handle(*this); }
 
-    bool getIsROVMode()
-    {
-        return _rov_mode;
-    }
+    void setNodeID(uint32_t newID) { _node_id = newID; }
+
+    bool getIsROVMode() { return _rov_mode; }
+    uint16_t getCount() { return _counter; }
+    const char *getFileName() { return _tx_file; }
+    void incrCount() { _counter++; }
 };
 
-class CalibrateState : public NodeState
+class IdleState : public NodeState
 {
 public:
     void handle(NodeFSM &fsm) override;
@@ -70,17 +156,7 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class SendIDState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
-
-class SendRTSState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendIDState();
 
 class SendHeaderState : public NodeState
 {
@@ -88,11 +164,7 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class SendDataStartState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendDataStartState();
 
 class SendDataFrameState : public NodeState
 {
@@ -100,11 +172,9 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class SendEOTState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createSendDataDoneState();
+
+unique_ptr<NodeState> createSendEOTState();
 
 class EchoConfirmationState : public NodeState
 {
@@ -112,19 +182,9 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class ReadIDState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createReadIDState();
 
 class ReadConfirmationState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
-
-class ReadRTSState : public NodeState
 {
 public:
     void handle(NodeFSM &fsm) override;
@@ -136,11 +196,7 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class ReadDataStartState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createReadDataStartState();
 
 class ReadDataFrameState : public NodeState
 {
@@ -148,10 +204,8 @@ public:
     void handle(NodeFSM &fsm) override;
 };
 
-class ReadEOTState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
+unique_ptr<NodeState> createReadEOTState();
+
+int runFSM(bool rovMode, const char *txFile);
 
 #endif // __FSM__

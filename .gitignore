@@ -40,3 +40,7 @@
 /iot-of-the-sea
 
 *.o
+
+*.dSYM/
+
+file_*x_test
