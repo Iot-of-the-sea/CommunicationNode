@@ -9,7 +9,7 @@
  * 5. Clean/pare down FSM states - GOOD
  * 6. Add EOT response for all states - NEVERMIND
  * 7. Generalize file management - GOOD ENOUGH FOR NOW (but still have to fix)
- * 8. Fix no file issue
+ * 8. Fix no file issue - DONE
  * 9. Implement 2-way file transfer
  * 10. Improve read ID to be more generalized
  * 11. Improve header/metadata stuff

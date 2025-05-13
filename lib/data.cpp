@@ -58,6 +58,7 @@ uint8_t frameFromHeaderData(frame &frame, headerData &header)
     frame.header = HEADER_DATA;
     frame.data_len = 6;
 
+    // little endian
     uint8_t headerDataBytes[FRAME_SIZE_BYTES] = {0};
     headerDataBytes[0] = (uint8_t)(header.nodeId);
     headerDataBytes[1] = (uint8_t)(header.nodeId >> 8);
