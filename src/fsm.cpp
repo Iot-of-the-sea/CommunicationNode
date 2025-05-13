@@ -15,14 +15,15 @@
  * 11. Improve header/metadata stuff
  *     - send file type
  *     - should send filename
- * 12. Refactor for constants
- * 13. Multithread transmission to speed up
+ * 12. Clean up writeTarget start
+ * 13. Refactor for constants
+ * 14. Multithread transmission to speed up
  */
 
 using namespace std;
 using namespace chrono;
 
-string response;
+string response, writeTarget;
 uint8_t headerByte, err;
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
@@ -37,6 +38,8 @@ vector<uint8_t> packet;
 uint8_t confirmation = 0;
 
 static volatile uint32_t nodeID;
+
+headerData fileHeaderData;
 
 int runFSM(bool rovMode, const char *txFile)
 {
@@ -192,7 +195,8 @@ void SendHeaderState::handle(NodeFSM &fsm)
     timeout.reset();
     timeout.setDuration(1000000);
 
-    uint32_t fileSize = getFileSize(fsm.getFileName());
+    const char *fileName = fsm.getFileName();
+    uint32_t fileSize = (fileName[0] != '\0') ? getFileSize(fsm.getFileName()) : 0;
     headerData header = {NODE_ID, fileSize};
     err = packetFromHeaderData(packet, header);
     if (!err)
@@ -237,7 +241,10 @@ void SendDataFrameState::handle(NodeFSM &fsm)
     timeout.reset();
     timeout.setDuration(100000);
     cout << "SEND DATA FRAME" << endl;
-    err = transmit_file(audioTx, fsm.getFileName(), timeout, 20);
+    const char *fileName = fsm.getFileName();
+    if (fileName[0] != '\0')
+        err = transmit_file(audioTx, fsm.getFileName(), timeout, 20);
+
     if (err)
         cout << "TIMED OUT" << endl;
 
@@ -340,13 +347,11 @@ void ReadHeaderState::handle(NodeFSM &fsm)
         err = getHeaderByte(response, headerByte);
         if (err)
         {
-            cout << "error" << endl;
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             fsm.changeState(createReadIDState());
         }
         else if ((headerByte & 0x7F) != HEADER_DATA)
         {
-            cout << "bad header byte" << endl;
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             fsm.changeState(createReadIDState());
         }
@@ -357,16 +362,17 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             if (!err && (headerByte & 0x7F) == HEADER_DATA && headerDataBytes.size() < 9)
             {
                 uint16_t nodeId = (uint8_t)response.at(1) | ((uint8_t)response.at(2) << 4);
-                cout << "Node ID: " << (unsigned char)nodeId << endl;
                 uint32_t fileSize = 0;
                 for (size_t i = 0; i < 4; i++)
                 {
                     fileSize |= (uint8_t)response.at(3 + i) << (4 * i);
                 }
-                cout << "File Size: " << (unsigned char)fileSize << endl;
+
+                fileHeaderData = {nodeId, fileSize};
+                cout << "Node ID: " << (unsigned int)fileHeaderData.nodeId << endl;
+                cout << "File Size: " << (unsigned int)fileHeaderData.fileSizeBytes << endl;
 
                 transmit_data(audioTx, DATA_MODE, HEADER_DATA);
-                cout << "to stage read data start" << endl;
                 fsm.changeState(createReadDataStartState());
             }
             else
@@ -405,10 +411,12 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
     timeout.reset();
     err = timeout.setDuration(100000);
 
-    string writeTarget = "./received_files/node" + to_string(nodeID) + "_" + getCurrentTimeString() + ".txt";
-    cout << writeTarget << endl;
-
-    err = receiveFile(audioTx, writeTarget.c_str(), timeout, 20);
+    if (fileHeaderData.fileSizeBytes > 0) {
+        writeTarget = "./received_files/node" + to_string(nodeID) + "_" + getCurrentTimeString() + ".txt";
+        err = receiveFile(audioTx, writeTarget.c_str(), timeout, 20);
+    } else {
+        err = listen(response, &timeout); // this is scuffed a little
+    }
 
     // listen(response);
     // err = getHeaderByte(response, headerByte);
