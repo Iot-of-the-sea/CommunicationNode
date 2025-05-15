@@ -15,9 +15,10 @@
  * 11. Improve header/metadata stuff
  *     - send file type
  *     - should send filename
- * 12. Clean up writeTarget start
- * 13. Refactor for constants
- * 14. Multithread transmission to speed up
+ * 12. Multiple file transfer
+ * 13. Clean up writeTarget start
+ * 14. Refactor for constants
+ * 15. Multithread transmission to speed up
  */
 
 using namespace std;
@@ -60,12 +61,6 @@ void SendState::handle(NodeFSM &fsm)
     timeout.setDuration(_timeout_us);
     err = listen(response, &timeout);
 
-    if (fsm.getCount() >= _maxTries - 1)
-    {
-        fsm.changeState(move(_failStateFactory()));
-        return;
-    }
-
     if (!err)
         err = getHeaderByte(response, headerByte);
 
@@ -76,6 +71,11 @@ void SendState::handle(NodeFSM &fsm)
     }
 
     fsm.incrCount();
+    if (fsm.getCount() >= _maxTries)
+    {
+        fsm.changeState(move(_failStateFactory()));
+        return;
+    }
 }
 
 void ReadState::handle(NodeFSM &fsm)
@@ -186,7 +186,8 @@ unique_ptr<NodeState> createSendIDState()
         []()
         { return make_unique<SendHeaderState>(); },
         []()
-        { return createSendEOTState(); });
+        { return createSendEOTState(); },
+        1000000, 25);
 }
 
 void SendHeaderState::handle(NodeFSM &fsm)
