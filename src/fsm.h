@@ -184,6 +184,12 @@ unique_ptr<NodeState> createSendEOTState();
 
 unique_ptr<NodeState> createReadIDState();
 
+// class ReadIDState : public NodeState
+// {
+// public:
+//     void handle(NodeFSM &fsm) override;
+// };
+
 class ReadHeaderState : public NodeState
 {
 public:
