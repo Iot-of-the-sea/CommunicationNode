@@ -65,7 +65,6 @@ uint8_t receiveFile(AudioTransmitter &tx, const char *fileName, TimeoutHandler &
     uint8_t err;
     uint16_t counter = 0;
 
-    cout << timeout.getDuration() << endl;
     FileWriter file(fileName);
     err = file.open();
     if (err)

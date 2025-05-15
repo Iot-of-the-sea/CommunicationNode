@@ -405,7 +405,7 @@ unique_ptr<NodeState> createReadEOTState()
 void TransmitDoneState::handle(NodeFSM &fsm)
 {
     cout << "TRANSMIT DONE" << endl;
-    fsm.setUnsent(true);
+    fsm.setUnsent(false);
 
     timeout.reset();
     timeout.setDuration(2500000);
