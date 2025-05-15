@@ -11,7 +11,7 @@
  * 7. Generalize file management - GOOD ENOUGH FOR NOW (but still have to fix)
  * 8. Fix no file issue - DONE
  * 9. Implement 2-way file transfer - DONE
- * 10. Improve read ID to be more generalized
+ * 10. Improve read ID to be more generalized - DONE
  * 11. Improve header/metadata stuff
  *     - send file type
  *     - should send filename
@@ -97,26 +97,6 @@ void ReadState::handle(NodeFSM &fsm)
     if (_send_nak)
         transmit_data(audioTx, CTRL_MODE, NAK_SEND);
     fsm.changeState(_failStateFactory());
-
-    // if (err == TIMEOUT_ERROR)
-    // {
-    //     fsm.changeState(_failStateFactory());
-    // }
-    // else
-    // {
-    //     err = getHeaderByte(response, headerByte);
-    //     if (!err && headerByte == _expected_receive)
-    //     {
-    //         transmit_data(audioTx, CTRL_MODE, _transmit_code);
-    //         fsm.changeState(move(_nextStateFactory()));
-    //     }
-    //     else
-    //     {
-    //         if (_send_nak)
-    //             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-    //         fsm.changeState(_failStateFactory());
-    //     }
-    // }
 }
 
 // Implement state transitions
@@ -189,7 +169,7 @@ void SearchState::handle(NodeFSM &fsm)
     if (err == TIMEOUT_ERROR)
         fsm.changeState(make_unique<DoneState>());
     else
-        fsm.changeState(createReadIDState());
+        fsm.changeState(make_unique<ReadIDState>());
 }
 
 unique_ptr<NodeState> createSendIDState()
@@ -292,44 +272,27 @@ unique_ptr<NodeState> createSendEOTState()
         1000000, 5);
 }
 
-// void ReadIDState::handle(NodeFSM &fsm)
-// {
-//     cout << "READ ID" << endl;
-
-//     timeout.reset();
-//     timeout.setDuration(10000000);
-//     err = listen(response, &timeout);
-
-//     if (err == TIMEOUT_ERROR)
-//     {
-//         fsm.changeState(make_unique<SearchState>());
-//     }
-//     else
-//     {
-//         err = getHeaderByte(response, headerByte);
-//         if (!err)
-//         {
-//             transmit_data(audioTx, DATA_MODE, headerByte);
-//             fsm.changeState(make_unique<ReadHeaderState>());
-//         }
-//         else
-//         {
-//             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-//             fsm.changeState(make_unique<SearchState>());
-//         }
-//     }
-// }
-
-unique_ptr<NodeState> createReadIDState()
+void ReadIDState::handle(NodeFSM &fsm)
 {
-    nodeID = NODE_ID;
-    return make_unique<ReadState>(
-        (NODE_ID | 0x80), (NODE_ID | 0x80),
-        []()
-        { return make_unique<ReadHeaderState>(); },
-        []()
-        { return make_unique<SearchState>(); },
-        true, 10000000);
+    cout << "READ ID" << endl;
+
+    timeout.reset();
+    timeout.setDuration(10000000);
+    err = listen(response, &timeout);
+
+    if (!err)
+        err = getHeaderByte(response, headerByte);
+
+    if (err)
+    {
+        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+        fsm.changeState(make_unique<SearchState>());
+    }
+    else
+    {
+        transmit_data(audioTx, DATA_MODE, headerByte);
+        fsm.changeState(make_unique<ReadHeaderState>());
+    }
 }
 
 // TODO: clean this up
@@ -342,7 +305,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
     err = listen(response, &timeout);
     if (err == TIMEOUT_ERROR)
     {
-        fsm.changeState(createReadIDState());
+        fsm.changeState(make_unique<ReadIDState>());
     }
     else
     {
@@ -350,12 +313,12 @@ void ReadHeaderState::handle(NodeFSM &fsm)
         if (err)
         {
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            fsm.changeState(createReadIDState());
+            fsm.changeState(make_unique<ReadIDState>());
         }
         else if ((headerByte & 0x7F) != HEADER_DATA)
         {
             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-            fsm.changeState(createReadIDState());
+            fsm.changeState(make_unique<ReadIDState>());
         }
         else
         {
@@ -382,7 +345,7 @@ void ReadHeaderState::handle(NodeFSM &fsm)
             }
             else
             {
-                fsm.changeState(createReadIDState());
+                fsm.changeState(make_unique<ReadIDState>());
                 transmit_data(audioTx, CTRL_MODE, NAK_SEND);
             }
         }
@@ -461,7 +424,7 @@ void TransmitDoneState::handle(NodeFSM &fsm)
         if (headerByte == HAS_FILES)
         {
             transmit_data(audioTx, CTRL_MODE, HAS_FILES);
-            fsm.changeState(createReadIDState());
+            fsm.changeState(make_unique<ReadIDState>());
             return;
         }
         else if (headerByte == HAS_NO_FILES)
