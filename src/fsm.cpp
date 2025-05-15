@@ -2,23 +2,16 @@
 
 /***
  * TODO:
- * 1. Implement DoneState - DONE
- * 2. Fix ReadHeader - GOOD FOR NOW
- * 3. Add back failure case for transmitting - GOOD
- * 4. Fix failure transitions - GOOD ENOUGH
- * 5. Clean/pare down FSM states - GOOD
- * 6. Add EOT response for all states - NEVERMIND
- * 7. Generalize file management - GOOD ENOUGH FOR NOW (but still have to fix)
- * 8. Fix no file issue - DONE
- * 9. Implement 2-way file transfer - DONE
- * 10. Improve read ID to be more generalized - DONE
- * 11. Improve header/metadata stuff
+ * 1. Improve header/metadata stuff
  *     - send file type
  *     - should send filename
- * 12. Multiple file transfer
- * 13. Clean up writeTarget start
- * 14. Refactor for constants
- * 15. Multithread transmission to speed up
+ * 2. Fix failure transition for second round of read id
+ * 3. Multiple file transfer
+ * 4. Clean up writeTarget start
+ * 5. Refactor for constants
+ * 6. Multithread transmission to speed up
+ * 7. Clean ReadHeaderState
+ * 8. Improve file management
  */
 
 using namespace std;
