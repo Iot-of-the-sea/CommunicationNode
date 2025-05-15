@@ -196,7 +196,7 @@ void SendHeaderState::handle(NodeFSM &fsm)
     timeout.setDuration(1000000);
 
     const char *fileName = fsm.getFileName();
-    uint32_t fileSize = (fileName[0] != '\0') ? getFileSize(fsm.getFileName()) : 0;
+    uint32_t fileSize = fsm.getUnsent() ? getFileSize(fsm.getFileName()) : 0;
     headerData header = {NODE_ID, fileSize};
     err = packetFromHeaderData(packet, header);
     if (!err)
@@ -242,7 +242,7 @@ void SendDataFrameState::handle(NodeFSM &fsm)
     timeout.setDuration(100000);
     cout << "SEND DATA FRAME" << endl;
     const char *fileName = fsm.getFileName();
-    if (fileName[0] != '\0')
+    if (fsm.getUnsent())
         err = transmit_file(audioTx, fsm.getFileName(), timeout, 50);
 
     if (err)
@@ -405,6 +405,8 @@ unique_ptr<NodeState> createReadEOTState()
 void TransmitDoneState::handle(NodeFSM &fsm)
 {
     cout << "TRANSMIT DONE" << endl;
+    fsm.setUnsent(true);
+
     timeout.reset();
     timeout.setDuration(2500000);
     err = listen(response, &timeout);
@@ -448,7 +450,7 @@ void ReceiveDoneState::handle(NodeFSM &fsm)
 {
     cout << "RECEIVE DONE" << endl;
 
-    uint8_t hasFiles = (fsm.getFileName()[0] == '\0') ? HAS_NO_FILES : HAS_FILES;
+    uint8_t hasFiles = (fsm.getUnsent()) ? HAS_FILES : HAS_NO_FILES;
     transmit_data(audioTx, CTRL_MODE, hasFiles);
 
     timeout.reset();
