@@ -386,9 +386,9 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
 
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     if (err == TIMEOUT_ERROR)
-        fsm.changeState(createSendEOTState());
+        fsm.changeState(make_unique<ReceiveDoneState>());
     else
-        fsm.changeState(createReadEOTState());
+        fsm.changeState(make_unique<ReceiveDoneState>());
 }
 
 unique_ptr<NodeState> createReadEOTState()
