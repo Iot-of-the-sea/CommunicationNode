@@ -10,7 +10,7 @@
  * 6. Add EOT response for all states - NEVERMIND
  * 7. Generalize file management - GOOD ENOUGH FOR NOW (but still have to fix)
  * 8. Fix no file issue - DONE
- * 9. Implement 2-way file transfer
+ * 9. Implement 2-way file transfer - DONE
  * 10. Improve read ID to be more generalized
  * 11. Improve header/metadata stuff
  *     - send file type
