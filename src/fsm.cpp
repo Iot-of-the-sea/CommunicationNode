@@ -418,11 +418,13 @@ void TransmitDoneState::handle(NodeFSM &fsm)
         {
             transmit_data(audioTx, CTRL_MODE, HAS_FILES);
             fsm.changeState(createReadIDState());
+            return;
         }
         else if (headerByte == HAS_NO_FILES)
         {
             transmit_data(audioTx, CTRL_MODE, HAS_NO_FILES);
             fsm.changeState(createSendEOTState());
+            return;
         }
         else
         {
@@ -439,5 +441,35 @@ void TransmitDoneState::handle(NodeFSM &fsm)
     if (fsm.getCount() >= 5)
     {
         fsm.changeState(createSendEOTState());
+    }
+}
+
+void ReceiveDoneState::handle(NodeFSM &fsm)
+{
+    cout << "RECEIVE DONE" << endl;
+
+    uint8_t hasFiles = (fsm.getFileName()[0] == '\0') ? HAS_NO_FILES : HAS_FILES;
+    transmit_data(audioTx, CTRL_MODE, hasFiles);
+
+    timeout.reset();
+    timeout.setDuration(1000000);
+    err = listen(response, &timeout);
+
+    if (!err)
+        err = getHeaderByte(response, headerByte);
+
+    if (!err && headerByte == hasFiles)
+    {
+        fsm.changeState(
+            (hasFiles == HAS_FILES)
+                ? createSendIDState()
+                : createReadEOTState());
+        return;
+    }
+
+    fsm.incrCount();
+    if (fsm.getCount() >= 5)
+    {
+        fsm.changeState(createReadEOTState());
     }
 }
