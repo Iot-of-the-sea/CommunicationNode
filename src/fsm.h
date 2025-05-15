@@ -176,19 +176,7 @@ unique_ptr<NodeState> createSendDataDoneState();
 
 unique_ptr<NodeState> createSendEOTState();
 
-class EchoConfirmationState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
-
 unique_ptr<NodeState> createReadIDState();
-
-class ReadConfirmationState : public NodeState
-{
-public:
-    void handle(NodeFSM &fsm) override;
-};
 
 class ReadHeaderState : public NodeState
 {

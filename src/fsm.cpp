@@ -277,48 +277,6 @@ unique_ptr<NodeState> createSendEOTState()
         1000000, 5);
 }
 
-// void EchoConfirmationState::handle(NodeFSM &fsm)
-// {
-//     cout << "waiting for confirmation? (y/n) ";
-//     cin >> response;
-//     if (response == "n")
-//     {
-//         listen(response);
-//         if (isAck(response))
-//         {
-//             if (fsm.getIsROVMode())
-//             {
-//                 cout << "to stage read eot" << endl;
-//                 fsm.changeState(createReadEOTState());
-//             }
-//             else
-//             {
-//                 cout << "even? (y/n) ";
-//                 cin >> response;
-
-//                 if (response == "y")
-//                 {
-//                     cout << "to stage read rts" << endl;
-//                     fsm.changeState(createReadIDState());
-//                 }
-//                 else
-//                 {
-//                     cout << "to stage send eot" << endl;
-//                     fsm.changeState(createSendEOTState());
-//                 }
-//             }
-//         }
-//         else
-//         {
-//             cout << "stay in echo confirmation" << endl;
-//         }
-//     }
-//     else
-//     {
-//         cout << "stay in echo confirmation" << endl;
-//     }
-// }
-
 unique_ptr<NodeState> createReadIDState()
 {
     cout << "READ ID" << endl;
@@ -426,98 +384,12 @@ void ReadDataFrameState::handle(NodeFSM &fsm)
         err = listen(response, &timeout); // this is scuffed a little
     }
 
-    // listen(response);
-    // err = getHeaderByte(response, headerByte);
-    // if (!err && headerByte == DATA_DONE)
-    // {
-    //     bool hasFile = true; // TODO: change to variable
-    //     confirmation = generate_parity_byte(hasFile);
-    //     uint8_t confirmation_arr[1] = {confirmation};
-    //     transmit_data(audioTx, DATA_MODE, 0x00, confirmation_arr, 1);
-    //     cout << "to stage read confirmation" << endl;
-    //     fsm.changeState(std::make_unique<ReadConfirmationState>());
-    // }
-    // else
-    // {
-    //     if (check_received_crc(response))
-    //     {
-    //         string packet_data;
-    //         transmit_data(audioTx, CTRL_MODE, ACK);
-    //         get_packet_data(response, packet_data);
-    //         cout << packet_data << endl;
-    //     }
-
-    //     cout << "stay in read data frames" << endl;
-    // }
-    // if (!err)
-    // {
-    //     cout << hex << uppercase
-    //          << setw(2) << setfill('0')
-    //          << (unsigned int)headerByte << " vs " << (unsigned int)DATA_DONE << endl;
-    //     err = getHeaderByte(response, headerByte);
-    //     if (!err && headerByte == DATA_DONE)
-    //     {
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     if (err == TIMEOUT_ERROR)
         fsm.changeState(createSendEOTState());
     else
         fsm.changeState(createReadEOTState());
-    //     }
-    //     else
-    //     {
-    //         transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-    //         cout << "to fail state" << endl;
-    //     }
-    // }
 }
-
-// void ReadConfirmationState::handle(NodeFSM &fsm)
-// {
-//     cout << "max tries? (y/n) ";
-//     cin >> response;
-
-//     if (response == "y")
-//     {
-//         cout << "confirmation code" << endl;
-//         cout << "stay in read confirmation" << endl;
-//     }
-//     else
-//     {
-//         cout << "match? (y/n) ";
-//         cin >> response;
-
-//         if (response == "y")
-//         {
-//             transmit_data(audioTx, CTRL_MODE, ACK);
-//             if (fsm.getIsROVMode())
-//             {
-//                 cout << "transmit? (y/n) ";
-//                 cin >> response;
-
-//                 if (response == "y")
-//                 {
-//                     cout << "to stage send rts" << endl;
-//                     fsm.changeState(createSendRTSState());
-//                 }
-//                 else
-//                 {
-//                     cout << "to stage read eot" << endl;
-//                     fsm.changeState(createSendEOTState());
-//                 }
-//             }
-//             else
-//             {
-//                 cout << "to stage send EOT" << endl;
-//                 fsm.changeState(createSendEOTState());
-//             }
-//         }
-//         else
-//         {
-//             transmit_data(audioTx, CTRL_MODE, NAK_SEND);
-//             cout << "stay in read confirmation" << endl;
-//         }
-//     }
-// }
 
 unique_ptr<NodeState> createReadEOTState()
 {
