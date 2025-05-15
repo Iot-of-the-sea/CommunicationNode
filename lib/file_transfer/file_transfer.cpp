@@ -14,7 +14,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *fileName, TimeoutHandler
     uint8_t frameNum = 0;
     uint8_t err;
 
-    uint8_t timeoutCount = 0;
+    uint8_t triesCount = 0;
 
     // TODO: thread these so that it make signals and plays at the same time
     while (ifile.read(frameBuf, FRAME_SIZE_BYTES)) // TODO: restructure this part for ack/nak
@@ -26,7 +26,7 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *fileName, TimeoutHandler
 
     string chunkStr;
     uint16_t chunkLen;
-    while (frameNum < chunks.size() && timeoutCount < maxTries)
+    while (frameNum < chunks.size() && triesCount < maxTries)
     {
         chunkStr = chunks.at(frameNum);
         chunkLen = chunkStr.length();
@@ -36,23 +36,16 @@ uint8_t transmit_file(AudioTransmitter &tx, const char *fileName, TimeoutHandler
 
         err = listen(response, &timeout);
 
-        if (err == TIMEOUT_ERROR)
-        {
-            timeoutCount++;
-        }
-        else
-        {
-            timeoutCount = 0;
-        }
-
         if (!err && isAck(response))
         {
             cout << static_cast<unsigned int>(frameNum) << ": " << response.c_str()[0] << endl;
             frameNum++;
+            triesCount = 0;
             cout << "ACK response" << endl;
         }
         else
         {
+            triesCount++;
             cout << "NAK response" << endl;
         }
     }

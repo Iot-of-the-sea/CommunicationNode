@@ -243,7 +243,7 @@ void SendDataFrameState::handle(NodeFSM &fsm)
     cout << "SEND DATA FRAME" << endl;
     const char *fileName = fsm.getFileName();
     if (fileName[0] != '\0')
-        err = transmit_file(audioTx, fsm.getFileName(), timeout, 20);
+        err = transmit_file(audioTx, fsm.getFileName(), timeout, 50);
 
     if (err)
         cout << "TIMED OUT" << endl;
@@ -260,7 +260,9 @@ unique_ptr<NodeState> createSendDataDoneState()
         []()
         { return createSendEOTState(); },
         []()
-        { return createSendEOTState(); });
+        { return createSendEOTState(); }, 1000000, 1);
+    // don't know why but doesn't receive DATA_DONE well,
+    // so works better to just move on
 }
 
 unique_ptr<NodeState> createSendEOTState()
@@ -269,7 +271,7 @@ unique_ptr<NodeState> createSendEOTState()
     return make_unique<SendState>(
         EOT, EOT, CTRL_MODE,
         []()
-        { return make_unique<IdleState>(); },
+        { return make_unique<DoneState>(); },
         []()
         { return make_unique<DoneState>(); },
         1000000, 5);
