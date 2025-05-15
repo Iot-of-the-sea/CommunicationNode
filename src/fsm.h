@@ -194,6 +194,18 @@ public:
 
 unique_ptr<NodeState> createReadEOTState();
 
+class TransmitDoneState : public NodeState
+{
+public:
+    void handle(NodeFSM &fsm) override;
+};
+
+class ReceiveDoneState : public NodeState
+{
+public:
+    void handle(NodeFSM &fsm) override;
+};
+
 int runFSM(bool rovMode, const char *txFile);
 
 #endif // __FSM__

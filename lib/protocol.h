@@ -22,6 +22,10 @@
 #define HEADER_DATA (uint8_t)(0b0011100)
 #define EOT (uint8_t)(0b1100011)
 
+// for when transmit or receive is done
+#define HAS_FILES (uint8_t)(0b0001111)
+#define HAS_NO_FILES (uint8_t)(0x1110000)
+
 // TODO: make class instead of struct
 typedef struct
 {

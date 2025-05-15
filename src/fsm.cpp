@@ -258,9 +258,9 @@ unique_ptr<NodeState> createSendDataDoneState()
         DATA_DONE, DATA_DONE, CTRL_MODE,
         // std::make_unique<EchoConfirmationState>(), TODO: change this back
         []()
-        { return createSendEOTState(); },
+        { return make_unique<TransmitDoneState>(); },
         []()
-        { return createSendEOTState(); }, 1000000, 1);
+        { return make_unique<TransmitDoneState>(); }, 1000000, 1);
     // don't know why but doesn't receive DATA_DONE well,
     // so works better to just move on
 }
@@ -400,4 +400,44 @@ unique_ptr<NodeState> createReadEOTState()
         { return make_unique<DoneState>(); },
         []()
         { return make_unique<DoneState>(); });
+}
+
+void TransmitDoneState::handle(NodeFSM &fsm)
+{
+    cout << "TRANSMIT DONE" << endl;
+    timeout.reset();
+    timeout.setDuration(2500000);
+    err = listen(response, &timeout);
+
+    if (!err)
+        err = getHeaderByte(response, headerByte);
+
+    if (!err)
+    {
+        if (headerByte == HAS_FILES)
+        {
+            transmit_data(audioTx, CTRL_MODE, HAS_FILES);
+            fsm.changeState(createReadIDState());
+        }
+        else if (headerByte == HAS_NO_FILES)
+        {
+            transmit_data(audioTx, CTRL_MODE, HAS_NO_FILES);
+            fsm.changeState(createSendEOTState());
+        }
+        else
+        {
+            err = ARGUMENT_ERROR;
+        }
+    }
+
+    if (err)
+    {
+        transmit_data(audioTx, CTRL_MODE, NAK_SEND);
+        fsm.incrCount();
+    }
+
+    if (fsm.getCount() >= 5)
+    {
+        fsm.changeState(createSendEOTState());
+    }
 }
