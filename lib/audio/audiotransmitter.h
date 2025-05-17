@@ -11,6 +11,7 @@
 
 #include "../data.h"
 #include "../control.h"
+#include "../gpio/gpio.h"
 
 #if LINUX
 #include "pa_linux_alsa.h"

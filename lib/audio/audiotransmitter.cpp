@@ -156,6 +156,7 @@ vector<double> AudioTransmitter::generate_stop(double start)
 // Function to play the generated waveform using PortAudio
 void AudioTransmitter::play_audio(const vector<double> &signal)
 {
+    set_gpio_mode(TX_MODE);
     vector<float_t> pcm_signal(signal.size());
     int counter = 0;
     // Convert double samples to 16-bit PCM and write to file

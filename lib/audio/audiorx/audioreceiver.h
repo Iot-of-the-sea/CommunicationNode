@@ -10,6 +10,7 @@
 #include <atomic>
 
 #include <string.h>
+#include "../../gpio/gpio.h"
 
 using namespace std;
 

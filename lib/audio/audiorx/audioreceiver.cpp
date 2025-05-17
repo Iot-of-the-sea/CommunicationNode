@@ -28,6 +28,7 @@ uint8_t listen(string &result)
 
 uint8_t listen(string &result, TimeoutHandler *timeout)
 {
+    set_gpio_mode(RX_MODE);
     samplingThread = thread(samplingThreadFunc, pcm_handle);
     preambleThread = thread(run, std::ref(received_str), timeout);
     samplingThread.join();
