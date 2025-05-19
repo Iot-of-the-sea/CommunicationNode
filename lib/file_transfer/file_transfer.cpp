@@ -180,6 +180,7 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
         cout << "transmit: " << (unsigned int)frameNum << endl;
 
         usleep(500000);
+        usleep(500000);
         set_gpio_mode(TX_MODE);
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
         testData->sent++;
@@ -240,10 +241,12 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
     uint8_t err;
     uint16_t counter = 0;
 
-    FileWriter file("./tst/testFile.txt");
+    cout << fileName << endl;
+    FileWriter file(fileName);
     file.open();
     while (headerByte != DATA_DONE)
     {
+        usleep(500000);
         usleep(500000);
         set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
@@ -255,8 +258,10 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
             err = get_packet_data(result, rx_data);
 
         if (!err && !check_received_crc(result))
+        {
             err = CRC_ERROR;
-
+            counter = 0;
+        }
         usleep(500000);
         set_gpio_mode(TX_MODE);
         if (!err)
