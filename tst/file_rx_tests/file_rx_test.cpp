@@ -1,10 +1,11 @@
 #include "../../lib/audio/audiotransmitter.h"
 #include "../../lib/file_transfer/file_transfer.h"
 #include <fstream>
+#include <chrono>
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 
-TimeoutHandler timeout(100000);
+TimeoutHandler timeout(5000000);
 
 string result, last_rx_data, rx_data;
 uint8_t headerByte = 0x00;
@@ -21,8 +22,11 @@ int main()
     init_gpio();
     init_pins("toggle");
 
+    srand(time(0));
+    string writeTarget = "./tst/test_received/test_rx_file_" + to_string(rand()) + ".txt";
+
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    err = receiveFile_test(audioTx, "./tst/testFile.txt", timeout, 5, &rxTestData);
+    err = receiveFile_test(audioTx, writeTarget.c_str(), timeout, 5000, &rxTestData);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
     audioTx.close_stream();

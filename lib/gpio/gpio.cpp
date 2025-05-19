@@ -123,14 +123,14 @@ uint8_t set_gpio_mode(uint8_t mode)
     if (mode == RX_MODE)
     {
         err = off_24();
-        usleep(5);
+        usleep(10);
         if (!err)
             err = on_25();
     }
     else if (mode == TX_MODE)
     {
         err = off_25();
-        usleep(5);
+        usleep(10);
         if (!err)
             err = on_24();
     }
