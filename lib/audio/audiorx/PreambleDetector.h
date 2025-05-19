@@ -11,7 +11,7 @@ constexpr int BUFFER_SIZE = 192;    // Length of each bit (in samples)
 constexpr int SAMPLE_RATE = 192000; // Sampling rate: 192 kHz
 constexpr double PI = 3.14159265358979323846;
 constexpr int16_t AMPLITUDE = 32767;
-constexpr float DETECTION_THRESHOLD = 0.85f; // Empirical threshold - correlation above this indicates detection
+constexpr float DETECTION_THRESHOLD = 0.7f; // Empirical threshold - correlation above this indicates detection
 
 // void run();
 void run(string &output, TimeoutHandler *timeout);

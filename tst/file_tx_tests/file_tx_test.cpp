@@ -2,7 +2,7 @@
 #include <chrono>
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
-TimeoutHandler timeout(1000000);
+TimeoutHandler timeout(750000);
 
 TxTestData txTestData;
 

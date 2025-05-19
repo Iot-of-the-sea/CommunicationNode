@@ -44,5 +44,5 @@
 *.dSYM/
 
 file_*x_test
-/received_files/
+/test_received/
 /build/

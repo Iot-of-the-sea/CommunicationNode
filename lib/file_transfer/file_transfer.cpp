@@ -238,7 +238,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
     uint8_t err;
     uint16_t counter = 0;
 
-    FileWriter file("./tst/testFile.txt");
+    FileWriter file(fileName);
     file.open();
     while (headerByte != DATA_DONE)
     {
@@ -254,6 +254,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         if (!err && !check_received_crc(result))
             err = CRC_ERROR;
 
+        usleep(500);
         set_gpio_mode(TX_MODE);
         if (!err)
         {
