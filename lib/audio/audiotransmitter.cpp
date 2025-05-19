@@ -107,12 +107,12 @@ vector<double> AudioTransmitter::generate_sequence(vector<uint8_t> &bytes, bool 
     }
 
     // Generate stop signal
-    bit_wave = generate_stop(offset);
-    y.insert(y.end(), bit_wave.begin(), bit_wave.end());
-    bit_wave = generate_stop(offset);
-    y.insert(y.end(), bit_wave.begin(), bit_wave.end());
-    bit_wave = generate_stop(offset);
-    y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+    // bit_wave = generate_stop(offset);
+    // y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+    // bit_wave = generate_stop(offset);
+    // y.insert(y.end(), bit_wave.begin(), bit_wave.end());
+    // bit_wave = generate_stop(offset);
+    // y.insert(y.end(), bit_wave.begin(), bit_wave.end());
 
     return y;
 }

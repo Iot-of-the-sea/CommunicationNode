@@ -179,10 +179,12 @@ uint8_t transmit_file_test(AudioTransmitter &tx, const char *file,
         memcpy(frameBuf, chunkStr.data(), chunkLen);
         cout << "transmit: " << (unsigned int)frameNum << endl;
 
+        usleep(500000);
         set_gpio_mode(TX_MODE);
         transmit_data(tx, DATA_MODE, frameNum, reinterpret_cast<uint8_t *>(frameBuf), chunkLen);
         testData->sent++;
 
+        usleep(500000);
         set_gpio_mode(RX_MODE);
         err = listen(response, &timeout);
         if (err == TIMEOUT_ERROR)
@@ -242,6 +244,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
     file.open();
     while (headerByte != DATA_DONE)
     {
+        usleep(500000);
         set_gpio_mode(RX_MODE);
         err = listen(result, &timeout);
 
@@ -254,6 +257,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         if (!err && !check_received_crc(result))
             err = CRC_ERROR;
 
+        usleep(500000);
         set_gpio_mode(TX_MODE);
         if (!err)
         {

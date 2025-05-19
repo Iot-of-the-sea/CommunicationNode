@@ -2,7 +2,7 @@
 #include <chrono>
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
-TimeoutHandler timeout(1000000);
+TimeoutHandler timeout(5000000);
 
 TxTestData txTestData;
 
@@ -15,7 +15,7 @@ int main()
     init_pins("toggle");
 
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
-    transmit_file_test(audioTx, "./tst/test.txt", timeout, 10, &txTestData);
+    transmit_file_test(audioTx, "./tst/test.txt", timeout, 500, &txTestData);
     transmit_data(audioTx, CTRL_MODE, DATA_DONE);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();
 
