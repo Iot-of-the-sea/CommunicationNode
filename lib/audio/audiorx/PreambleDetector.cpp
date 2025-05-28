@@ -211,6 +211,11 @@ bool crossCorrelation(const std::vector<float> &data, const std::vector<float> &
 
     bool detectionSuccessful = (maxCorrelation >= DETECTION_THRESHOLD);
 
+    if (maxCorrelation >= 0.7f)
+    {
+        std::cout << "Maximum correlation value: " << maxCorrelation << std::endl;
+    }
+
     if (detectionSuccessful)
     {
         // std::cout << "Most likely starting position: " << bestPosition << std::endl;
