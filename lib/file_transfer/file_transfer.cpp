@@ -254,7 +254,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
         if (!err && !check_received_crc(result))
             err = CRC_ERROR;
 
-        usleep(500);
+        usleep(100000);
         set_gpio_mode(TX_MODE);
         if (!err)
         {
@@ -265,6 +265,7 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
                 file.write(last_rx_data);
             }
 
+            cout << rx_data << endl;
             last_rx_data = rx_data;
             lastHeader = headerByte;
             counter = 0;
@@ -305,6 +306,8 @@ uint8_t receiveFile_test(AudioTransmitter &tx, const char *fileName,
             break;
         }
     }
+
+    cout << "DATA DONE received" << endl;
 
     file.write(last_rx_data);
     file.close();

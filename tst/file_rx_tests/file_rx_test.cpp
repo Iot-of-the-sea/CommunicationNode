@@ -4,7 +4,7 @@
 
 AudioTransmitter audioTx(AudioProfile(1000.0, {63000, 67000}, 50000));
 
-TimeoutHandler timeout(5000000);
+TimeoutHandler timeout(1000000);
 
 string result, last_rx_data, rx_data;
 uint8_t headerByte = 0x00;
@@ -22,8 +22,11 @@ int main()
     init_gpio();
     init_pins("toggle");
 
+#if DEMO
+    string fileName = "./tst/test_received/rx_demo.txt";
+#else
     string fileName = "./tst/test_received/test_rx_file_" + to_string(rand()) + ".txt";
-
+#endif
     chrono::steady_clock::time_point startTime = chrono::steady_clock::now();
     err = receiveFile_test(audioTx, fileName.c_str(), timeout, 5, &rxTestData);
     chrono::steady_clock::time_point endTime = chrono::steady_clock::now();

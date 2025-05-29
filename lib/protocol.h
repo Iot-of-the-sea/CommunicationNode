@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <vector>
 
-#define FRAME_SIZE 16
+#define FRAME_SIZE 64
 #define FRAME_SIZE_BYTES FRAME_SIZE / 8
 
 #define CTRL_MODE (uint8_t)(0b0)

@@ -4,6 +4,7 @@
 #define LINUX true
 #define DEPLOYED true
 #define PARAMETER_TESTING true
+#define DEMO true
 
 #define NODE_ID 0x24
 

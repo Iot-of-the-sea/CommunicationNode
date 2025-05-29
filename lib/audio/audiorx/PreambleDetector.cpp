@@ -10,7 +10,7 @@
 vector<float> buffer(BUFFER_SIZE * 10, 0.0f);
 mutex mutex_preamble;
 condition_variable cond;
-vector<float> preambleTemplate;
+vector<float> preambleTemplate = generateBFSKPreambleTemplate();
 
 vector<float> generateBFSKPreambleTemplate()
 {
@@ -57,8 +57,6 @@ void updateBuffer(const vector<float> &newData)
 
 void run(string &output, TimeoutHandler *timeout)
 {
-    preambleTemplate = generateBFSKPreambleTemplate();
-
     // Used to store the first valid detection result
     bool detectionInitialized = false;
     size_t bestPosition_old = 0;
@@ -211,16 +209,11 @@ bool crossCorrelation(const std::vector<float> &data, const std::vector<float> &
 
     bool detectionSuccessful = (maxCorrelation >= DETECTION_THRESHOLD);
 
-    if (maxCorrelation >= 0.7f)
-    {
-        std::cout << "Maximum correlation value: " << maxCorrelation << std::endl;
-    }
-
-    if (detectionSuccessful)
-    {
-        // std::cout << "Most likely starting position: " << bestPosition << std::endl;
-        // std::cout << "Maximum correlation value: " << maxCorrelation << std::endl;
-    }
+    // if (detectionSuccessful)
+    // {
+    //     // std::cout << "Most likely starting position: " << bestPosition << std::endl;
+    //     // std::cout << "Maximum correlation value: " << maxCorrelation << std::endl;
+    // }
 
     return detectionSuccessful;
 }
